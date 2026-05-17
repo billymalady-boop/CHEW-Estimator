@@ -1787,13 +1787,15 @@ function authAndSendEmail() {
   const tc = google.accounts.oauth2.initTokenClient({
     client_id: GMAIL_CLIENT_ID,
     scope: 'https://www.googleapis.com/auth/gmail.send',
+    login_hint: 'chew.earthworks@gmail.com',
     callback: (r) => {
       if (r.error) { setEmailStatus('⚠ Auth failed: ' + r.error); return; }
       gmailToken = r.access_token;
       doSendGmail();
     }
   });
-  tc.requestAccessToken();
+  // Force account selection so user picks chew.earthworks
+  tc.requestAccessToken({ prompt: 'select_account' });
 }
 
 async function doSendGmail() {
