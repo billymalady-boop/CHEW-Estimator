@@ -1287,7 +1287,7 @@ function calcDeb(){
   const dens=(md.lo+md.hi)/2;
   const tpl=cf*dens/2000;
   const totTons=tpl*loads*1.15;
-  const dispCost=totTons*DISP;
+  const dispCost=totTons*DISP_COST;
   const dispChg=totTons*md.chg;
   const machChg=mhrs*attRate;
   const allTrips=loads*tripChg;
@@ -1302,7 +1302,7 @@ function calcDeb(){
   $('deb-disp').textContent=fmt(dispChg);
   $('deb-mach').textContent=fmt(machChg);
   $('deb-tripc').textContent=fmt(allTrips);
-  $('deb-actual').textContent=fmt(dispCost)+' (your cost @ $'+DISP+'/t)';
+  $('deb-actual').textContent=fmt(dispCost)+' (your cost @ $'+DISP_COST+'/t)';
   $('deb-sub').textContent=fmt(sub);
   updAmt('deb',S.deb,S.debOn,loads+' load'+(loads>1?'s':''));
   calcTot();
