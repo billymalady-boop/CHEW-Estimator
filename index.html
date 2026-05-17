@@ -1934,47 +1934,62 @@ async function lookupDistance() {
   if (!addr) { alert('Enter a job site address first'); return; }
   setAddrStatus('⟳ Looking up address...');
 
-  try {
-    // Use Nominatim OpenStreetMap geocoder — free, no key needed
-    const query = encodeURIComponent(addr + ', Texas, USA');
-    const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&countrycodes=us`;
-    const resp = await fetch(url, {
-      headers: { 'Accept-Language': 'en', 'User-Agent': 'CHEW-Estimator/1.0' }
-    });
-    const data = await resp.json();
+  // Try US Census Geocoder first (free, no key, CORS-friendly)
+  // Falls back to Nominatim via CORS proxy if Census fails
+  const tryApis = [
+    () => fetchCensus(addr),
+    () => fetchNominatim(addr)
+  ];
 
-    if (!data || data.length === 0) {
-      setAddrStatus('⚠ Address not found — try adding city and state (e.g. 1000 Main St, Gatesville TX)');
-      return;
-    }
-
-    const result = data[0];
-    const lat = parseFloat(result.lat);
-    const lng = parseFloat(result.lon);
-    const displayName = result.display_name;
-
-    // Calculate straight-line distance
-    const miles = haversine(BASE_LAT, BASE_LNG, lat, lng);
-    // Add 20% for road routing estimate
-    const roadMiles = Math.round(miles * 1.2);
-    const driveTime = estDriveTime(miles);
-
-    // Update fields
-    $('dist').value = roadMiles;
-    $('drive-time').textContent = driveTime + ' from base';
-    setAddrStatus('✓ ' + roadMiles + ' mi (est.) · ' + driveTime);
-
-    // Update address field with full address
-    $('ja').value = displayName.split(',').slice(0,4).join(',');
-    sp();
-
-    // Check 60-mile radius
-    $('dist-warn').style.display = roadMiles > 60 ? 'block' : 'none';
-    calcMob();
-
-  } catch(err) {
-    setAddrStatus('⚠ Lookup failed — check internet connection or enter miles manually');
+  for (const tryFn of tryApis) {
+    try {
+      const result = await tryFn();
+      if (result) {
+        const { lat, lng, display } = result;
+        const miles = haversine(BASE_LAT, BASE_LNG, lat, lng);
+        const roadMiles = Math.round(miles * 1.2);
+        const driveTime = estDriveTime(miles);
+        $('dist').value = roadMiles;
+        $('drive-time').textContent = driveTime + ' from base';
+        setAddrStatus('✓ ' + roadMiles + ' mi (est.) · ' + driveTime);
+        if (display) $('ja').value = display;
+        sp();
+        $('dist-warn').style.display = roadMiles > 60 ? 'block' : 'none';
+        calcMob();
+        return;
+      }
+    } catch(e) { /* try next */ }
   }
+  setAddrStatus('⚠ Could not find address — enter distance manually in the miles field below');
+}
+
+async function fetchCensus(addr) {
+  const url = 'https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address='
+    + encodeURIComponent(addr) + '&benchmark=2020&format=json';
+  const resp = await fetch(url);
+  const data = await resp.json();
+  const matches = data?.result?.addressMatches;
+  if (!matches || matches.length === 0) return null;
+  const m = matches[0];
+  return {
+    lat: parseFloat(m.coordinates.y),
+    lng: parseFloat(m.coordinates.x),
+    display: m.matchedAddress
+  };
+}
+
+async function fetchNominatim(addr) {
+  // Use a CORS proxy to get around browser restrictions
+  const query = encodeURIComponent(addr + ', Texas, USA');
+  const url = 'https://nominatim.openstreetmap.org/search?q=' + query + '&format=json&limit=1&countrycodes=us';
+  const resp = await fetch(url);
+  const data = await resp.json();
+  if (!data || data.length === 0) return null;
+  return {
+    lat: parseFloat(data[0].lat),
+    lng: parseFloat(data[0].lon),
+    display: data[0].display_name.split(',').slice(0,4).join(',')
+  };
 }
 
 // Allow Enter key to trigger lookup
