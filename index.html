@@ -1253,101 +1253,196 @@ function setPSL(row,val,amt,on){
 const CHEW_EMAIL = 'chew.earthworks@gmail.com';
 let gmailToken = null;
 
-function buildEmailBody() {
-  const em=sv('ce');
-  const cust=sv('cn')||'Customer';
-  const addr=sv('ja')||'Job Site';
-  const qnum=sv('qn');
-  const biz=sv('bp')||'(254) 000-0000';
-  const lines=[];
-  if(S.mob>0)lines.push('Mobilization: '+fmt(S.mob));
-  if(S.clrOn&&S.clr>0)lines.push('Land Clearing / Brush Hogging: '+fmt(S.clr));
-  if(S.grvOn&&S.grv>0)lines.push('Gravel / Material Spreading: '+fmt(S.grv));
-  if(S.debOn&&S.deb>0)lines.push('Debris & Waste Removal: '+fmt(S.deb));
-  if(S.demOn&&S.dem>0)lines.push('Demolition Cleanup: '+fmt(S.dem));
-  if(S.grdOn&&S.grd>0)lines.push('Grading / Site Prep: '+fmt(S.grd));
-  if(S.trnOn&&S.trn>0)lines.push('Trenching / Digging Arm: '+fmt(S.trn));
+function buildLineRows() {
+  const rows = [];
+  const tr = (label, val) => `<tr><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#cccccc;font-size:14px;">${label}</td><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;text-align:right;font-weight:700;color:#ffffff;font-size:14px;">${val}</td></tr>`;
+  if(S.mob>0) rows.push(tr('Mobilization', fmt(S.mob)));
+  if(S.clrOn&&S.clr>0) rows.push(tr('Land Clearing / Brush Hogging', fmt(S.clr)));
+  if(S.grvOn&&S.grv>0) rows.push(tr('Gravel / Material Spreading', fmt(S.grv)));
+  if(S.debOn&&S.deb>0) rows.push(tr('Debris &amp; Waste Removal', fmt(S.deb)));
+  if(S.demOn&&S.dem>0) rows.push(tr('Demolition Cleanup', fmt(S.dem)));
+  if(S.grdOn&&S.grd>0) rows.push(tr('Grading / Site Prep', fmt(S.grd)));
+  if(S.trnOn&&S.trn>0) rows.push(tr('Trenching / Digging Arm', fmt(S.trn)));
   const sur=(parseFloat(sv('sur'))||0)+(parseFloat(sv('rush'))||0)+fv('misc');
-  if(sur>0)lines.push('Surcharges: '+fmt(sur));
+  if(sur>0) rows.push(tr('Surcharges', fmt(sur)));
   const cont=parseFloat(sv('cont'))/100;
   const base=S.mob+S.clr+S.grv+S.deb+S.dem+S.grd+S.trn+sur;
   const contAmt=base*cont;
-  if(contAmt>0)lines.push('Contingency ('+sv('cont')+'%): '+fmt(contAmt));
-  const total=Math.max(400,base+contAmt);
-  const dep=parseFloat(sv('dep'))/100;
-  const depAmt=dep>0?Math.round(total*dep):0;
-  lines.push(''); lines.push('TOTAL: '+fmt(total));
-  if(depAmt>0)lines.push('DEPOSIT DUE AT SCHEDULING: '+fmt(depAmt));
+  if(contAmt>0) rows.push(tr('Contingency ('+sv('cont')+'%)', fmt(contAmt)));
+  return { rows, total: Math.max(400, base+contAmt), dep: parseFloat(sv('dep'))/100, base, contAmt };
+}
 
-  const body=
-`${sv('qn')} — CHEW CENTRAL TEXAS SITE SERVICES
-${'='.repeat(50)}
+function buildHtmlEmail() {
+  const em=sv('ce'), cust=sv('cn')||'Customer', addr=sv('ja')||'Job Site';
+  const qnum=sv('qn'), biz=sv('bp')||'901-258-9942';
+  const { rows, total, dep } = buildLineRows();
+  const depAmt = dep>0 ? Math.round(total*dep) : 0;
+  const statusColor = S.status==='ESTIMATE' ? '#cc8800' : S.status==='QUOTE' ? '#1a8a1a' : '#1a5ca8';
+  const excl = sv('excl');
+  const jn = sv('jn')||'As discussed on site / by phone';
 
-Hi ${cust},
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:20px 0;">
+<tr><td align="center">
+<table width="620" cellpadding="0" cellspacing="0" style="background:#1a1a1a;border-radius:4px;overflow:hidden;max-width:620px;">
 
-Thank you for the opportunity. Please find your ${S.status} below.
+  <!-- HEADER -->
+  <tr><td style="background:#1a1a1a;padding:28px 32px 20px;border-bottom:4px solid #CC2222;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td>
+          <div style="font-size:36px;font-weight:900;color:#CC2222;letter-spacing:4px;line-height:1;">CHEW</div>
+          <div style="font-size:10px;color:#888;letter-spacing:2px;margin-top:4px;">CLEARING · HAULING · EARTHWORK · WASTE REMOVAL</div>
+          <div style="font-size:11px;color:#666;margin-top:4px;">1125 Lindorbet Rd · Copperas Cove, TX 76522 · ${biz}</div>
+        </td>
+        <td align="right" valign="top">
+          <div style="background:${statusColor};color:#fff;font-size:11px;font-weight:700;letter-spacing:2px;padding:4px 10px;border-radius:3px;margin-bottom:6px;display:inline-block;">${S.status}</div>
+          <div style="color:#F5C400;font-size:13px;font-weight:700;">${qnum}</div>
+          <div style="color:#888;font-size:11px;">${sv('jd')} · Valid ${sv('vf')}</div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
 
-DOCUMENT: ${S.status}
-QUOTE #: ${qnum}
-DATE: ${sv('jd')}
-VALID FOR: ${sv('vf')}
-JOB SITE: ${addr}
+  <!-- CUSTOMER INFO -->
+  <tr><td style="padding:20px 32px;border-bottom:1px solid #2a2a2a;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="50%" style="vertical-align:top;">
+          <div style="font-size:9px;color:#CC2222;letter-spacing:2px;font-weight:700;margin-bottom:6px;">CUSTOMER</div>
+          <div style="color:#ffffff;font-size:15px;font-weight:700;">${cust}</div>
+          <div style="color:#888;font-size:12px;margin-top:2px;">${sv('cp')||''}</div>
+          <div style="color:#888;font-size:12px;">${em}</div>
+        </td>
+        <td width="50%" style="vertical-align:top;">
+          <div style="font-size:9px;color:#CC2222;letter-spacing:2px;font-weight:700;margin-bottom:6px;">JOB SITE</div>
+          <div style="color:#ffffff;font-size:13px;">${addr}</div>
+          <div style="color:#888;font-size:12px;margin-top:4px;">${sv('dist')||'—'} miles from base · ~${sv('dtime')||'—'}</div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
 
-SCOPE OF WORK:
-${sv('jn')||'As discussed on site / by phone'}
+  <!-- SCOPE -->
+  <tr><td style="padding:16px 32px;border-bottom:1px solid #2a2a2a;">
+    <div style="font-size:9px;color:#CC2222;letter-spacing:2px;font-weight:700;margin-bottom:8px;">SCOPE OF WORK</div>
+    <div style="color:#cccccc;font-size:13px;line-height:1.6;">${jn}</div>
+  </td></tr>
 
-PRICING BREAKDOWN:
-${lines.join('\n')}
+  <!-- PRICING TABLE -->
+  <tr><td style="padding:20px 32px 0;">
+    <div style="font-size:9px;color:#CC2222;letter-spacing:2px;font-weight:700;margin-bottom:10px;">PRICING BREAKDOWN</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #2a2a2a;">
+      ${rows.join('')}
+    </table>
+  </td></tr>
 
-PAYMENT TERMS: ${sv('pterm')}
-${sv('excl')?'\nEXCLUSIONS & NOTES:\n'+sv('excl'):''}
+  <!-- TOTAL -->
+  <tr><td style="padding:0 32px 20px;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr style="background:#CC2222;">
+        <td style="padding:14px;font-size:15px;font-weight:900;color:#ffffff;letter-spacing:1px;">TOTAL</td>
+        <td style="padding:14px;text-align:right;font-size:22px;font-weight:900;color:#F5C400;">${fmt(total)}</td>
+      </tr>
+      ${depAmt>0?`<tr style="background:#111;"><td style="padding:10px 14px;font-size:12px;color:#888;">Deposit Required at Scheduling</td><td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:700;color:#F5C400;">${fmt(depAmt)}</td></tr>`:''}
+      <tr style="background:#111;"><td colspan="2" style="padding:8px 14px;font-size:11px;color:#666;">Payment: ${sv('pterm')||'Due on completion'} · Valid for ${sv('vf')||'30 days'}</td></tr>
+    </table>
+  </td></tr>
 
-${'─'.repeat(50)}
-ESTIMATE DISCLAIMER & LIABILITY WAIVER
-${'─'.repeat(50)}
-This document is a ${S.status} and is NOT a guaranteed or binding price. All figures are based on visible conditions and information provided at time of estimate.
+  ${excl?`<!-- EXCLUSIONS -->
+  <tr><td style="padding:0 32px 16px;">
+    <div style="background:#1a1000;border:1px solid #774400;border-radius:3px;padding:12px 14px;">
+      <div style="font-size:9px;color:#cc8833;letter-spacing:2px;font-weight:700;margin-bottom:6px;">EXCLUSIONS &amp; NOTES</div>
+      <div style="color:#cc8833;font-size:12px;line-height:1.6;">${excl}</div>
+    </div>
+  </td></tr>`:''}
 
-ACTUAL CHARGES MAY VARY based on:
-• Actual material weight at certified scale (disposal billed at scale ticket weight)
-• Site conditions not visible or disclosed prior to work, including but not limited to: buried rock, old fence wire, underground utilities, septic systems, irrigation lines, tree stumps, and subsurface debris
-• Scope changes discovered during work
+  <!-- CTA -->
+  <tr><td style="padding:16px 32px;background:#111;text-align:center;">
+    <div style="color:#cccccc;font-size:13px;margin-bottom:12px;">To accept this ${S.status.toLowerCase()}, reply to this email or call/text us.</div>
+    <div style="color:#F5C400;font-size:13px;font-weight:700;">${biz} · chew.earthworks@gmail.com</div>
+  </td></tr>
 
-HIDDEN CONDITIONS: Tall brush, overgrown areas, and undisturbed land may conceal hazards including but not limited to buried fencing, wire, stumps, concrete, rock outcrops, and unmarked utilities. These conditions cannot always be identified before work begins and may affect final pricing.
+  <!-- DISCLAIMER -->
+  <tr><td style="padding:16px 32px;border-top:1px solid #2a2a2a;">
+    <div style="font-size:9px;color:#555;letter-spacing:1px;font-weight:700;margin-bottom:8px;">ESTIMATE DISCLAIMER &amp; LIABILITY WAIVER</div>
+    <div style="font-size:10px;color:#555;line-height:1.7;">
+      This document is a ${S.status} and is NOT a guaranteed or binding price. Actual charges may vary based on actual material weight at certified scale, site conditions not visible or disclosed prior to work (including buried rock, fence wire, utilities, septic systems, irrigation lines, and subsurface debris), and scope changes discovered during work. Customer is responsible for marking all underground utilities, septic components, and known hazards prior to start of work. Call 811 before any digging. CHEW is not liable for pre-existing property conditions or unmarked hazards. Any scope change will be presented via written change order before additional work proceeds.
+    </div>
+  </td></tr>
 
-CUSTOMER RESPONSIBILITIES: Customer is responsible for identifying and marking all underground utilities, septic system components, irrigation heads, wells, and known hazards PRIOR to start of work. Call 811 before any digging is required.
+  <!-- FOOTER -->
+  <tr><td style="padding:14px 32px;background:#0d0d0d;border-top:3px solid #CC2222;text-align:center;">
+    <div style="font-size:11px;color:#444;letter-spacing:2px;">CHEW · CLEARING · HAULING · EARTHWORK · WASTE REMOVAL</div>
+    <div style="font-size:10px;color:#333;margin-top:4px;">Central Texas Site Services · Coryell County TX</div>
+  </td></tr>
 
-LIABILITY LIMITATION: CHEW — Central Texas Site Services is not liable for pre-existing property conditions, unmarked utilities, subsurface structures, or hazards not reasonably visible during a site assessment. Any change to scope will be presented via written change order before additional work proceeds.
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
 
-By accepting this estimate, customer acknowledges these conditions.
-${'─'.repeat(50)}
-
-To accept this estimate, please reply to this email, call, or text us.
-We require a signed copy and ${depAmt>0?'deposit of '+fmt(depAmt):' no deposit'} to schedule.
-
-CHEW — Clearing · Hauling · Earthwork · Waste Removal
-Copperas Cove, TX 76522
-${biz}`;
-
+function buildEmailBody() {
+  const em=sv('ce'), cust=sv('cn')||'Customer', addr=sv('ja')||'Job Site';
+  const qnum=sv('qn'), biz=sv('bp')||'901-258-9942';
+  const { rows, total, dep } = buildLineRows();
+  const depAmt = dep>0 ? Math.round(total*dep) : 0;
   const subj=`CHEW ${S.status} ${qnum} — ${addr}`;
-  return { to: em, subject: subj, body, cust, addr, qnum };
+  const htmlBody = buildHtmlEmail();
+  return { to: em, subject: subj, body: htmlBody, cust, addr, qnum, depAmt };
 }
 
 function emailQ() {
   const em = sv('ce');
-  // ── VALIDATION ──
   if (!em || !em.includes('@')) {
     alert('⚠ No customer email address entered.\n\nPlease fill in the Customer Email field before sending.');
     return;
   }
-  const { subject, body } = buildEmailBody();
-  // Open Gmail compose window with pre-filled fields
-  // User must be signed into chew.earthworks@gmail.com in their browser
+  const { subject, body: htmlBody, depAmt } = buildEmailBody();
+  // Open a new tab with the formatted quote + a Send via Gmail button
+  const win = window.open('', '_blank');
   const gmailUrl = 'https://mail.google.com/mail/?view=cm'
     + '&to=' + encodeURIComponent(em)
     + '&cc=' + encodeURIComponent(CHEW_EMAIL)
-    + '&su=' + encodeURIComponent(subject)
-    + '&body=' + encodeURIComponent(body);
-  window.open(gmailUrl, '_blank');
+    + '&su=' + encodeURIComponent(subject);
+  win.document.write(`<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<title>${subject}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#0d0d0d;font-family:Arial,sans-serif;}
+  .toolbar{position:fixed;top:0;left:0;right:0;background:#1a1a1a;border-bottom:3px solid #CC2222;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;z-index:999;}
+  .toolbar-left{display:flex;align-items:center;gap:16px;}
+  .brand{font-size:22px;font-weight:900;color:#CC2222;letter-spacing:3px;}
+  .label{font-size:11px;color:#666;letter-spacing:1px;}
+  .btn-send{background:#CC2222;color:#fff;border:none;padding:10px 24px;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;border-radius:3px;}
+  .btn-send:hover{background:#aa1a1a;}
+  .btn-close{background:transparent;color:#555;border:1px solid #333;padding:10px 16px;font-size:12px;cursor:pointer;border-radius:3px;}
+  .note{font-size:11px;color:#555;margin-top:4px;}
+  .wrap{padding:80px 20px 40px;max-width:660px;margin:0 auto;}
+</style>
+</head><body>
+<div class="toolbar">
+  <div class="toolbar-left">
+    <div class="brand">CHEW</div>
+    <div>
+      <div class="label">QUOTE PREVIEW — ${subject}</div>
+      <div class="note">Review below, then click Send to open Gmail with this quote pre-addressed.</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <button class="btn-close" onclick="window.close()">✕ Close</button>
+    <button class="btn-send" onclick="window.open('${gmailUrl}','_blank')">✉ SEND VIA GMAIL →</button>
+  </div>
+</div>
+<div class="wrap">${htmlBody}</div>
+</body></html>`);
+  win.document.close();
 }
 
 // ── DISTANCE CALCULATION — No API key needed ──
