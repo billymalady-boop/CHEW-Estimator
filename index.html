@@ -393,6 +393,34 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
         </div>
 
         <div class="settings-section">
+          <h3>GRAVEL — YOUR QUARRY COST ($/TON)</h3>
+          <div class="settings-grid">
+            <div class="sf"><label>Flex Base / Crusher Run ($/ton)</label><input type="number" id="s-gv-flexbase" value="16" step="0.25"><div class="hint">Your cost at pit — customer charged at markup below</div></div>
+            <div class="sf"><label>Crushed Stone / ¾" ($/ton)</label><input type="number" id="s-gv-crushed" value="18" step="0.25"></div>
+            <div class="sf"><label>Screenings / Fines ($/ton)</label><input type="number" id="s-gv-screenings" value="14" step="0.25"></div>
+            <div class="sf"><label>Caliche ($/ton)</label><input type="number" id="s-gv-caliche" value="12" step="0.25"></div>
+            <div class="sf"><label>Customer Markup Multiplier</label><input type="number" id="s-gv-markup" value="2.5" step="0.1"><div class="hint">2.5 = charge customer 2.5× your pit cost. Covers hauling, fuel, handling.</div></div>
+            <div class="sf"><label>Spread &amp; Grade Rate ($/hr)</label><input type="number" id="s-gv-spread" value="150"><div class="hint">Machine rate for spreading and grading gravel</div></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>DEBRIS DISPOSAL — CUSTOMER RATES ($/TON)</h3>
+          <div class="settings-grid">
+            <div class="sf"><label>Brush / Loose ($/ton)</label><input type="number" id="s-deb-brush" value="165"></div>
+            <div class="sf"><label>Yard Waste ($/ton)</label><input type="number" id="s-deb-yard" value="165"></div>
+            <div class="sf"><label>Household / Junk ($/ton)</label><input type="number" id="s-deb-household" value="215"></div>
+            <div class="sf"><label>C&amp;D / Mixed Demo ($/ton)</label><input type="number" id="s-deb-cd" value="215"></div>
+            <div class="sf"><label>Stumps ($/ton)</label><input type="number" id="s-deb-stumps" value="180"></div>
+            <div class="sf"><label>Dirt / Clean Fill ($/ton)</label><input type="number" id="s-deb-dirt" value="165"></div>
+            <div class="sf"><label>Wet Soil / Clay ($/ton)</label><input type="number" id="s-deb-wetsoil" value="165"></div>
+            <div class="sf"><label>Gravel / Rock ($/ton)</label><input type="number" id="s-deb-gravel" value="165"></div>
+            <div class="sf"><label>Concrete ($/ton)</label><input type="number" id="s-deb-concrete" value="240"></div>
+          </div>
+          <div style="margin-top:10px;font-size:10px;color:#555;">Your actual dump fee is set above under "Transfer Station Cost" — the margin is the difference between what you charge and what you pay.</div>
+        </div>
+
+        <div class="settings-section">
           <h3>PIN MANAGEMENT</h3>
           <div class="settings-grid">
             <div class="sf"><label>Change PIN (4 digits)</label><input type="password" id="s-pin-new" maxlength="4" placeholder="New PIN"><div class="hint">Current default: 2580</div></div>
@@ -1154,7 +1182,7 @@ function calcClr(){
 
 // ── GRAVEL ──
 const GV_DEF_COST={flexbase:16,crushed:18,screenings:14,caliche:12,custom:0};
-const GV_MARKUP=2.5;
+let GV_MARKUP=2.5;
 function calcGrv(){
   if(!S.grvOn){S.grv=0;S.grvH=0;S.grvMat=0;updAmt('grv',0,false,'');calcTot();return;}
   const l=fv('gv-l'),w=fv('gv-w'),d=fv('gv-d'),mat=sv('gv-mat'),cond=parseFloat(sv('gv-cond'))||0;
@@ -1168,7 +1196,7 @@ function calcGrv(){
   const matChg=tons*chargeTon;
   const trips=loads*tripChg;
   const spdH=Math.max(1,tons/10);
-  const spdChg=spdH*150+cond;
+  const spdChg=spdH*R.gvSpread+cond;
   const sub=matChg+trips+spdChg;
   const matCost=tons*costTon;
   S.grv=l>0?sub:0;S.grvH=l>0?spdH:0;S.grvMat=l>0?matCost:0;
@@ -1628,6 +1656,15 @@ const SETTINGS_DEFAULTS = {
   dumpCost:98.75, trip:65,
   mob1:75, mob2:125, mob3:175, mob4:225, mob5:250, mob6:300,
   demConc:750, demAsph:700, demStruct:500, demMixed:600,
+  // Gravel quarry costs (your cost per ton)
+  gvFlexbase:16, gvCrushed:18, gvScreenings:14, gvCaliche:12,
+  // Gravel markup multiplier (2.5 = charge customer 2.5x your cost)
+  gvMarkup:2.5,
+  // Spread & grade rate
+  gvSpread:150,
+  // Debris disposal customer rates per material
+  debBrush:165, debYard:165, debHousehold:215, debCd:215,
+  debStumps:180, debDirt:165, debWetsoil:165, debGravel:165, debConcrete:240,
   pin:'2580'
 };
 let R = {...SETTINGS_DEFAULTS}; // live rates object
@@ -1641,17 +1678,33 @@ function loadSettings() {
 }
 
 function applyRatesToCalcs() {
-  // Update CLR_RATE
+  // Machine rates
   CLR_RATE.brush = R.brush;
   CLR_RATE.grapple = R.grapple;
   CLR_RATE.bucket = R.bucket;
-  // Update DISP (disposal cost)
+  // Disposal cost
   DISP_COST = R.dumpCost;
-  // Update DEM_HAUL
+  // Demo haul
   DEM_HAUL.concrete = R.demConc;
   DEM_HAUL.asphalt = R.demAsph;
   DEM_HAUL.structure = R.demStruct;
   DEM_HAUL.mixed = R.demMixed;
+  // Gravel quarry costs
+  GV_DEF_COST.flexbase = R.gvFlexbase;
+  GV_DEF_COST.crushed = R.gvCrushed;
+  GV_DEF_COST.screenings = R.gvScreenings;
+  GV_DEF_COST.caliche = R.gvCaliche;
+  GV_MARKUP = R.gvMarkup;
+  // Debris disposal customer rates
+  DEB_DATA.brush.chg = R.debBrush;
+  DEB_DATA.yard.chg = R.debYard;
+  DEB_DATA.household.chg = R.debHousehold;
+  DEB_DATA.cd.chg = R.debCd;
+  DEB_DATA.stumps.chg = R.debStumps;
+  DEB_DATA.dirt.chg = R.debDirt;
+  DEB_DATA.wetsoil.chg = R.debWetsoil;
+  DEB_DATA.gravel.chg = R.debGravel;
+  DEB_DATA.concrete.chg = R.debConcrete;
 }
 
 function openSettings() {
@@ -1690,7 +1743,15 @@ function populateSettingsForm() {
     's-mob1':R.mob1,'s-mob2':R.mob2,'s-mob3':R.mob3,
     's-mob4':R.mob4,'s-mob5':R.mob5,'s-mob6':R.mob6,
     's-dem-conc':R.demConc,'s-dem-asph':R.demAsph,
-    's-dem-struct':R.demStruct,'s-dem-mixed':R.demMixed
+    's-dem-struct':R.demStruct,'s-dem-mixed':R.demMixed,
+    's-gv-flexbase':R.gvFlexbase,'s-gv-crushed':R.gvCrushed,
+    's-gv-screenings':R.gvScreenings,'s-gv-caliche':R.gvCaliche,
+    's-gv-markup':R.gvMarkup,'s-gv-spread':R.gvSpread,
+    's-deb-brush':R.debBrush,'s-deb-yard':R.debYard,
+    's-deb-household':R.debHousehold,'s-deb-cd':R.debCd,
+    's-deb-stumps':R.debStumps,'s-deb-dirt':R.debDirt,
+    's-deb-wetsoil':R.debWetsoil,'s-deb-gravel':R.debGravel,
+    's-deb-concrete':R.debConcrete
   };
   for (const [id, val] of Object.entries(map)) {
     const el = $(id); if (el) el.value = val;
@@ -1729,6 +1790,21 @@ function saveSettings() {
   R.demAsph = parseFloat($('s-dem-asph').value)||700;
   R.demStruct = parseFloat($('s-dem-struct').value)||500;
   R.demMixed = parseFloat($('s-dem-mixed').value)||600;
+  R.gvFlexbase = parseFloat($('s-gv-flexbase').value)||16;
+  R.gvCrushed = parseFloat($('s-gv-crushed').value)||18;
+  R.gvScreenings = parseFloat($('s-gv-screenings').value)||14;
+  R.gvCaliche = parseFloat($('s-gv-caliche').value)||12;
+  R.gvMarkup = parseFloat($('s-gv-markup').value)||2.5;
+  R.gvSpread = parseFloat($('s-gv-spread').value)||150;
+  R.debBrush = parseFloat($('s-deb-brush').value)||165;
+  R.debYard = parseFloat($('s-deb-yard').value)||165;
+  R.debHousehold = parseFloat($('s-deb-household').value)||215;
+  R.debCd = parseFloat($('s-deb-cd').value)||215;
+  R.debStumps = parseFloat($('s-deb-stumps').value)||180;
+  R.debDirt = parseFloat($('s-deb-dirt').value)||165;
+  R.debWetsoil = parseFloat($('s-deb-wetsoil').value)||165;
+  R.debGravel = parseFloat($('s-deb-gravel').value)||165;
+  R.debConcrete = parseFloat($('s-deb-concrete').value)||240;
   localStorage.setItem('chew_rates', JSON.stringify(R));
   applyRatesToCalcs();
   // Update default trip charge inputs
