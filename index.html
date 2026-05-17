@@ -1269,7 +1269,7 @@ function buildLineRows() {
   const cont=parseFloat(sv('cont'))/100;
   const base=S.mob+S.clr+S.grv+S.deb+S.dem+S.grd+S.trn+sur;
   const contAmt=base*cont;
-  if(contAmt>0) rows.push(tr('Contingency ('+sv('cont')+'%)', fmt(contAmt)));
+  // Contingency rolled into total — not shown as line item on email
   return { rows, total: Math.max(400, base+contAmt), dep: parseFloat(sv('dep'))/100, base, contAmt };
 }
 
@@ -1368,10 +1368,20 @@ function buildHtmlEmail() {
   </td></tr>
 
   <!-- DISCLAIMER -->
-  <tr><td style="padding:16px 32px;border-top:1px solid #2a2a2a;">
-    <div style="font-size:9px;color:#555;letter-spacing:1px;font-weight:700;margin-bottom:8px;">ESTIMATE DISCLAIMER &amp; LIABILITY WAIVER</div>
-    <div style="font-size:10px;color:#555;line-height:1.7;">
-      This document is a ${S.status} and is NOT a guaranteed or binding price. Actual charges may vary based on actual material weight at certified scale, site conditions not visible or disclosed prior to work (including buried rock, fence wire, utilities, septic systems, irrigation lines, and subsurface debris), and scope changes discovered during work. Customer is responsible for marking all underground utilities, septic components, and known hazards prior to start of work. Call 811 before any digging. CHEW is not liable for pre-existing property conditions or unmarked hazards. Any scope change will be presented via written change order before additional work proceeds.
+  <tr><td style="padding:20px 32px;border-top:2px solid #CC2222;background:#1a1a1a;">
+    <div style="font-size:10px;color:#CC2222;letter-spacing:2px;font-weight:700;margin-bottom:10px;">ESTIMATE DISCLAIMER &amp; LIABILITY WAIVER</div>
+    <div style="font-size:12px;color:#aaaaaa;line-height:1.8;">
+      This document is a <strong style="color:#ffffff;">${S.status}</strong> and is <strong style="color:#ffffff;">NOT a guaranteed or binding price.</strong> Actual charges may vary based on:
+    </div>
+    <div style="margin:10px 0 10px 12px;font-size:12px;color:#888888;line-height:1.9;">
+      • Actual material weight at certified scale (disposal billed at scale ticket weight)<br>
+      • Site conditions not visible prior to work — buried rock, fence wire, utilities, septic systems, irrigation lines, stumps, subsurface debris<br>
+      • Scope changes discovered during work
+    </div>
+    <div style="font-size:12px;color:#aaaaaa;line-height:1.8;">
+      <strong style="color:#ffffff;">Customer responsibilities:</strong> Mark all underground utilities, septic components, and known hazards before work begins. Call 811 before any digging.<br><br>
+      <strong style="color:#ffffff;">Liability limitation:</strong> CHEW is not liable for pre-existing property conditions, unmarked utilities, or subsurface hazards not visible during site assessment. Any scope change will be presented via written change order before additional work proceeds.<br><br>
+      By accepting this ${S.status.toLowerCase()}, customer acknowledges these conditions.
     </div>
   </td></tr>
 
