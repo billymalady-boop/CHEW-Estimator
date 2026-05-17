@@ -232,6 +232,34 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
 }
 
 /* ── PRINT ── */
+/* ── SETTINGS PANEL ── */
+.settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9000;align-items:center;justify-content:center;}
+.settings-overlay.open{display:flex;}
+.settings-box{background:#1a1a1a;border:2px solid #CC2222;border-radius:6px;width:min(720px,96vw);max-height:88vh;overflow-y:auto;padding:0;}
+.settings-hdr{background:#CC2222;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1;}
+.settings-hdr h2{color:#fff;font-size:16px;font-weight:900;letter-spacing:2px;margin:0;}
+.settings-close{background:transparent;border:1px solid rgba(255,255,255,0.4);color:#fff;padding:6px 14px;cursor:pointer;border-radius:3px;font-size:12px;}
+.settings-body{padding:24px;}
+.settings-section{margin-bottom:24px;border-bottom:1px solid #2a2a2a;padding-bottom:20px;}
+.settings-section:last-child{border-bottom:none;margin-bottom:0;}
+.settings-section h3{font-size:10px;color:#CC2222;letter-spacing:2px;font-weight:700;margin-bottom:14px;}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.sf{display:flex;flex-direction:column;gap:4px;}
+.sf label{font-size:10px;color:#888;letter-spacing:1px;}
+.sf input{background:#111;border:1px solid #333;color:#fff;padding:8px 10px;font-size:13px;border-radius:3px;width:100%;}
+.sf input:focus{outline:none;border-color:#CC2222;}
+.sf .hint{font-size:10px;color:#555;}
+.pin-screen{padding:40px 24px;text-align:center;}
+.pin-screen h3{color:#CC2222;font-size:14px;letter-spacing:2px;margin-bottom:8px;}
+.pin-screen p{color:#666;font-size:12px;margin-bottom:20px;}
+.pin-input{background:#111;border:2px solid #333;color:#fff;padding:12px;font-size:24px;text-align:center;letter-spacing:8px;border-radius:3px;width:160px;}
+.pin-input:focus{outline:none;border-color:#CC2222;}
+.pin-btn{background:#CC2222;color:#fff;border:none;padding:10px 28px;font-size:13px;font-weight:700;cursor:pointer;border-radius:3px;margin-top:12px;}
+.settings-save{background:#CC2222;color:#fff;border:none;padding:12px 32px;font-size:13px;font-weight:700;letter-spacing:2px;cursor:pointer;border-radius:3px;width:100%;margin-top:8px;}
+.settings-save:hover{background:#aa1a1a;}
+.settings-btn{background:transparent;border:1px solid #444;color:#888;padding:7px 14px;font-size:11px;cursor:pointer;border-radius:3px;letter-spacing:1px;}
+.settings-btn:hover{border-color:#CC2222;color:#CC2222;}
+
 @media print {
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   body{background:#fff;color:#111;font-size:11px;}
@@ -293,6 +321,91 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
 <body>
 
 <!-- APP HEADER -->
+<div class="settings-overlay no-print" id="settings-overlay">
+  <div class="settings-box">
+    <!-- PIN SCREEN -->
+    <div id="pin-screen" class="pin-screen">
+      <h3>⚙ CHEW RATE SETTINGS</h3>
+      <p>Enter your 4-digit PIN to access rate settings</p>
+      <div><input class="pin-input" id="pin-input" type="password" maxlength="4" placeholder="••••" onkeyup="checkPin(event)"></div>
+      <div><button class="pin-btn" onclick="checkPin({key:'Enter'})">UNLOCK</button></div>
+      <div style="margin-top:12px;font-size:10px;color:#444;">Default PIN: 2580</div>
+    </div>
+    <!-- SETTINGS BODY (hidden until PIN) -->
+    <div id="settings-body" style="display:none;">
+      <div class="settings-hdr">
+        <h2>⚙ RATE SETTINGS</h2>
+        <button class="settings-close" onclick="closeSettings()">✕ CLOSE</button>
+      </div>
+      <div class="settings-body">
+
+        <div class="settings-section">
+          <h3>HOURLY MACHINE RATES</h3>
+          <div class="settings-grid">
+            <div class="sf"><label>Bucket / Grading ($/hr)</label><input type="number" id="s-bucket" value="150"><div class="hint">Default: $150/hr</div></div>
+            <div class="sf"><label>Brush Hog ($/hr)</label><input type="number" id="s-brush" value="160"><div class="hint">Default: $160/hr</div></div>
+            <div class="sf"><label>Grapple ($/hr)</label><input type="number" id="s-grapple" value="155"><div class="hint">Default: $155/hr</div></div>
+            <div class="sf"><label>Jackhammer / Demo ($/hr)</label><input type="number" id="s-jack" value="175"><div class="hint">Default: $175/hr</div></div>
+            <div class="sf"><label>Digging Arm / Trenching ($/hr)</label><input type="number" id="s-trench" value="165"><div class="hint">Default: $165/hr</div></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>DISPOSAL RATES (CUSTOMER-FACING $/TON)</h3>
+          <div class="settings-grid">
+            <div class="sf"><label>Brush / Yard Waste ($/ton)</label><input type="number" id="s-disp-brush" value="165"><div class="hint">Your cost: see dump fee below</div></div>
+            <div class="sf"><label>Dirt / Clean Fill ($/ton)</label><input type="number" id="s-disp-dirt" value="165"><div class="hint">Your cost: see dump fee below</div></div>
+            <div class="sf"><label>C&amp;D / Mixed Debris ($/ton)</label><input type="number" id="s-disp-cd" value="215"><div class="hint">Your cost: see dump fee below</div></div>
+            <div class="sf"><label>Stumps ($/ton)</label><input type="number" id="s-disp-stump" value="180"><div class="hint">Your cost: see dump fee below</div></div>
+            <div class="sf"><label>Concrete ($/ton)</label><input type="number" id="s-disp-conc" value="240"><div class="hint">Your cost: see dump fee below</div></div>
+            <div class="sf"><label>Asphalt ($/ton)</label><input type="number" id="s-disp-asph" value="215"><div class="hint">Your cost: see dump fee below</div></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>YOUR ACTUAL DUMP FEE (NOT SHOWN TO CUSTOMER)</h3>
+          <div class="settings-grid">
+            <div class="sf"><label>Transfer Station Cost ($/ton)</label><input type="number" id="s-dump-cost" value="98.75" step="0.25"><div class="hint">Copperas Cove Transfer Station · update when fees change</div></div>
+            <div class="sf"><label>Default Trip Charge ($/load)</label><input type="number" id="s-trip" value="65"><div class="hint">Round trip to transfer station</div></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>MOBILIZATION FEES BY DISTANCE</h3>
+          <div class="settings-grid">
+            <div class="sf"><label>0–15 miles ($)</label><input type="number" id="s-mob1" value="75"></div>
+            <div class="sf"><label>16–25 miles ($)</label><input type="number" id="s-mob2" value="125"></div>
+            <div class="sf"><label>26–35 miles ($)</label><input type="number" id="s-mob3" value="175"></div>
+            <div class="sf"><label>36–45 miles ($)</label><input type="number" id="s-mob4" value="225"></div>
+            <div class="sf"><label>46–55 miles ($)</label><input type="number" id="s-mob5" value="250"></div>
+            <div class="sf"><label>56–60 miles ($)</label><input type="number" id="s-mob6" value="300"></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>DEMO HAUL RATES (CUSTOMER $/LOAD)</h3>
+          <div class="settings-grid">
+            <div class="sf"><label>Concrete ($/load)</label><input type="number" id="s-dem-conc" value="750"></div>
+            <div class="sf"><label>Asphalt ($/load)</label><input type="number" id="s-dem-asph" value="700"></div>
+            <div class="sf"><label>Wood Structure / Shed ($/load)</label><input type="number" id="s-dem-struct" value="500"></div>
+            <div class="sf"><label>Mixed Demo Debris ($/load)</label><input type="number" id="s-dem-mixed" value="600"></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>PIN MANAGEMENT</h3>
+          <div class="settings-grid">
+            <div class="sf"><label>Change PIN (4 digits)</label><input type="password" id="s-pin-new" maxlength="4" placeholder="New PIN"><div class="hint">Current default: 2580</div></div>
+            <div class="sf"><label>Confirm New PIN</label><input type="password" id="s-pin-confirm" maxlength="4" placeholder="Confirm PIN"></div>
+          </div>
+        </div>
+
+        <button class="settings-save" onclick="saveSettings()">✓ SAVE ALL RATES &amp; CLOSE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="app-header no-print">
   <div class="brand">
     <div class="brand-name">CHEW</div>
@@ -774,15 +887,16 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
         <input type="number" id="misc" value="0" min="0" oninput="calcTot()">
       </div>
     </div>
-    <div class="f"><label>Contingency Buffer</label>
+    <div class="f"><label>Contingency Buffer <span style="color:var(--muted);font-size:10px;font-weight:400;">— roll into total, not shown to customer</span></label>
       <div class="rg">
         <div class="rb" onclick="sr('cont','0',this);calcTot()">None</div>
-        <div class="rb on" onclick="sr('cont','10',this);calcTot()">10%</div>
-        <div class="rb" onclick="sr('cont','15',this);calcTot()">15%</div>
-        <div class="rb" onclick="sr('cont','20',this);calcTot()">20%</div>
+        <div class="rb" onclick="sr('cont','5',this);calcTot()" title="Clean site, repeat customer">5% Clean</div>
+        <div class="rb on" onclick="sr('cont','10',this);calcTot()" title="Standard unknown residential">10% Standard</div>
+        <div class="rb" onclick="sr('cont','15',this);calcTot()" title="Overgrown, sloped, haven't seen it">15% Rough</div>
+        <div class="rb" onclick="sr('cont','20',this);calcTot()" title="Demo, suspected buried debris, anything sketchy">20% Risky</div>
       </div>
       <input type="hidden" id="cont" value="10">
-      <div class="hint">Recommended 10–15% for jobs with unknown site conditions</div>
+      <div class="hint">5% clean site · 10% standard · 15% overgrown/sloped · 20% demo/sketchy — never shown on quote</div>
     </div>
     <div class="g3">
       <div class="f"><label>Deposit Required</label>
@@ -800,6 +914,14 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
         </select>
       </div>
       <div><div class="cl">Deposit Amount</div><div class="cv sm" id="dep-amt">$0</div></div>
+    </div>
+    <div class="f"><label>Show Hours &amp; Rates on Quote / Email</label>
+      <div class="rg">
+        <div class="rb on" onclick="sr('show-rates','0',this)" title="Show lump sum only — customer sees line items not hours">Lump Sum Only</div>
+        <div class="rb" onclick="sr('show-rates','1',this)" title="Show hours and hourly rates — good for commercial">Show Hours + Rates</div>
+      </div>
+      <input type="hidden" id="show-rates" value="0">
+      <div class="hint">Lump Sum: customer sees job totals only · Hours + Rates: shows hrs and $/hr (better for commercial clients)</div>
     </div>
     <div class="f"><label>Exclusions / Special Notes for Customer</label>
       <textarea id="excl" placeholder="e.g. Haul-off not included. Customer to mark sprinkler heads and septic lid before work. Concrete disposal priced separately..."></textarea>
@@ -895,6 +1017,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
   <div style="margin-top:14px">
     <button class="btn btn-r" onclick="window.print()">🖨 Print / Save PDF</button>
     <button class="btn btn-y" onclick="emailQ()">✉ Email Quote</button>
+    <button class="btn settings-btn no-print" onclick="openSettings()">⚙ Rates</button>
     <button class="btn btn-drive" onclick="saveToDrive()">💾 Save to Drive</button>
     <div class="drive-status" id="drive-status"></div>
     <button class="btn btn-o" onclick="resetF()">↺ New Quote</button>
@@ -1000,8 +1123,8 @@ function sp(){
 function calcMob(){
   const d=fv('dist');
   let f=0;
-  if(d>0&&d<=15)f=75;else if(d<=25)f=125;else if(d<=35)f=175;
-  else if(d<=45)f=225;else if(d<=55)f=250;else if(d>55)f=300;
+  if(d>0&&d<=15)f=R.mob1;else if(d<=25)f=R.mob2;else if(d<=35)f=R.mob3;
+  else if(d<=45)f=R.mob4;else if(d<=55)f=R.mob5;else if(d>55)f=R.mob6;
   S.mob=f;$('mob-d').textContent=fmt(f);calcTot();
 }
 
@@ -1072,7 +1195,8 @@ const DEB_DATA={
   gravel: {lo:90,hi:105,chg:165,maxF:0.50},
   concrete:{lo:100,hi:150,chg:240,maxF:0.25}
 };
-const TRL_CF=196, DISP=98.75;
+const TRL_CF=196;
+let DISP_COST=98.75; // overridden by R.dumpCost after loadSettings()
 
 function selMat(mat){
   Object.keys(DEB_DATA).forEach(m=>{const c=$('mc-'+m);if(c)c.classList.remove('sel');});
@@ -1098,7 +1222,7 @@ function calcDeb(){
   const md=DEB_DATA[mat]||DEB_DATA.brush;
   const fill=parseFloat(sv('deb-fill'))||0.5;
   const loads=fv('deb-loads')||1;
-  const attRate=sv('deb-att')==='bucket'?150:155;
+  const attRate=sv('deb-att')==='bucket'?R.bucket:R.grapple;
   const mhrs=fv('deb-mhrs')||1;
   const tripChg=fv('deb-trip')||65;
   const cf=TRL_CF*fill;
@@ -1131,7 +1255,7 @@ const DEM_HAUL={concrete:750,asphalt:700,structure:500,mixed:600};
 function calcDem(){
   if(!S.demOn){S.dem=0;S.demH=0;updAmt('dem',0,false,'');calcTot();return;}
   const bh=fv('dem-bh'),lh=fv('dem-lh'),lo=fv('dem-lo'),trip=fv('dem-trip')||65,mat=sv('dem-mat');
-  const bl=bh*175,ll=lh*155,haul=lo*DEM_HAUL[mat]+lo*trip;
+  const bl=bh*R.jack,ll=lh*R.grapple,haul=lo*DEM_HAUL[mat]+lo*trip;
   const sub=bl+ll+haul;
   S.dem=sub;S.demH=bh+lh;
   $('dem-bl').textContent=fmt(bl);
@@ -1157,7 +1281,7 @@ function calcGrd(){
 function calcTrn(){
   if(!S.trnOn){S.trn=0;S.trnH=0;updAmt('trn',0,false,'');calcTot();return;}
   const l=fv('trn-l'),dep=parseFloat(sv('trn-dep'))||1.0,soil=parseFloat(sv('trn-soil'))||1.0;
-  const h=Math.max(2,(l/80)*dep*soil);const sub=l>0?h*165:0;
+  const h=Math.max(2,(l/80)*dep*soil);const sub=l>0?h*R.trench:0;
   S.trn=sub;S.trnH=l>0?h:0;
   $('trn-hr').textContent=l>0?h.toFixed(1)+' hrs':'—';
   $('trn-sub').textContent=l>0?fmt(sub):'—';
@@ -1257,14 +1381,18 @@ let gmailToken = null;
 
 function buildLineRows() {
   const rows = [];
-  const tr = (label, val) => `<tr><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#cccccc;font-size:14px;">${label}</td><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;text-align:right;font-weight:700;color:#ffffff;font-size:14px;">${val}</td></tr>`;
+  const showRates = sv('show-rates') === '1';
+  const tr = (label, val, detail) => {
+    const detailHtml = (showRates && detail) ? `<div style="font-size:11px;color:#888;margin-top:2px;">${detail}</div>` : '';
+    return `<tr><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#cccccc;font-size:14px;">${label}${detailHtml}</td><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;text-align:right;font-weight:700;color:#ffffff;font-size:14px;vertical-align:top;">${val}</td></tr>`;
+  };
   if(S.mob>0) rows.push(tr('Mobilization', fmt(S.mob)));
-  if(S.clrOn&&S.clr>0) rows.push(tr('Land Clearing / Brush Hogging', fmt(S.clr)));
+  if(S.clrOn&&S.clr>0) rows.push(tr('Land Clearing / Brush Hogging', fmt(S.clr), S.clrH ? S.clrH.toFixed(1)+' hrs' : ''));
   if(S.grvOn&&S.grv>0) rows.push(tr('Gravel / Material Spreading', fmt(S.grv)));
-  if(S.debOn&&S.deb>0) rows.push(tr('Debris &amp; Waste Removal', fmt(S.deb)));
-  if(S.demOn&&S.dem>0) rows.push(tr('Demolition Cleanup', fmt(S.dem)));
-  if(S.grdOn&&S.grd>0) rows.push(tr('Grading / Site Prep', fmt(S.grd)));
-  if(S.trnOn&&S.trn>0) rows.push(tr('Trenching / Digging Arm', fmt(S.trn)));
+  if(S.debOn&&S.deb>0) rows.push(tr('Debris &amp; Waste Removal', fmt(S.deb), S.debH ? S.debH.toFixed(1)+' hrs loading' : ''));
+  if(S.demOn&&S.dem>0) rows.push(tr('Demolition Cleanup', fmt(S.dem), S.demH ? S.demH.toFixed(1)+' hrs' : ''));
+  if(S.grdOn&&S.grd>0) rows.push(tr('Grading / Site Prep', fmt(S.grd), S.grdH ? S.grdH.toFixed(1)+' hrs @ $'+R.bucket+'/hr' : ''));
+  if(S.trnOn&&S.trn>0) rows.push(tr('Trenching / Digging Arm', fmt(S.trn), S.trnH ? S.trnH.toFixed(1)+' hrs @ $'+R.trench+'/hr' : ''));
   const sur=(parseFloat(sv('sur'))||0)+(parseFloat(sv('rush'))||0)+fv('misc');
   if(sur>0) rows.push(tr('Surcharges', fmt(sur)));
   const cont=parseFloat(sv('cont'))/100;
@@ -1493,6 +1621,129 @@ async function doSendGmail() {
   }
 }
 
+// ── SETTINGS ──
+const SETTINGS_DEFAULTS = {
+  bucket:150, brush:160, grapple:155, jack:175, trench:165,
+  dispBrush:165, dispDirt:165, dispCd:215, dispStump:180, dispConc:240, dispAsph:215,
+  dumpCost:98.75, trip:65,
+  mob1:75, mob2:125, mob3:175, mob4:225, mob5:250, mob6:300,
+  demConc:750, demAsph:700, demStruct:500, demMixed:600,
+  pin:'2580'
+};
+let R = {...SETTINGS_DEFAULTS}; // live rates object
+
+function loadSettings() {
+  const saved = localStorage.getItem('chew_rates');
+  if (saved) {
+    try { R = {...SETTINGS_DEFAULTS, ...JSON.parse(saved)}; } catch(e) {}
+  }
+  applyRatesToCalcs();
+}
+
+function applyRatesToCalcs() {
+  // Update CLR_RATE
+  CLR_RATE.brush = R.brush;
+  CLR_RATE.grapple = R.grapple;
+  CLR_RATE.bucket = R.bucket;
+  // Update DISP (disposal cost)
+  DISP_COST = R.dumpCost;
+  // Update DEM_HAUL
+  DEM_HAUL.concrete = R.demConc;
+  DEM_HAUL.asphalt = R.demAsph;
+  DEM_HAUL.structure = R.demStruct;
+  DEM_HAUL.mixed = R.demMixed;
+}
+
+function openSettings() {
+  $('settings-overlay').classList.add('open');
+  $('pin-screen').style.display = 'block';
+  $('settings-body').style.display = 'none';
+  $('pin-input').value = '';
+  setTimeout(() => $('pin-input').focus(), 100);
+}
+
+function closeSettings() {
+  $('settings-overlay').classList.remove('open');
+}
+
+function checkPin(e) {
+  if (e.key !== 'Enter') return;
+  const entered = $('pin-input').value;
+  if (entered === R.pin) {
+    $('pin-screen').style.display = 'none';
+    $('settings-body').style.display = 'block';
+    populateSettingsForm();
+  } else {
+    $('pin-input').value = '';
+    $('pin-input').placeholder = 'Wrong PIN';
+    setTimeout(() => { $('pin-input').placeholder = '••••'; }, 1500);
+  }
+}
+
+function populateSettingsForm() {
+  const map = {
+    's-bucket':R.bucket,'s-brush':R.brush,'s-grapple':R.grapple,
+    's-jack':R.jack,'s-trench':R.trench,
+    's-disp-brush':R.dispBrush,'s-disp-dirt':R.dispDirt,'s-disp-cd':R.dispCd,
+    's-disp-stump':R.dispStump,'s-disp-conc':R.dispConc,'s-disp-asph':R.dispAsph,
+    's-dump-cost':R.dumpCost,'s-trip':R.trip,
+    's-mob1':R.mob1,'s-mob2':R.mob2,'s-mob3':R.mob3,
+    's-mob4':R.mob4,'s-mob5':R.mob5,'s-mob6':R.mob6,
+    's-dem-conc':R.demConc,'s-dem-asph':R.demAsph,
+    's-dem-struct':R.demStruct,'s-dem-mixed':R.demMixed
+  };
+  for (const [id, val] of Object.entries(map)) {
+    const el = $(id); if (el) el.value = val;
+  }
+}
+
+function saveSettings() {
+  // PIN change
+  const newPin = $('s-pin-new').value;
+  const confirmPin = $('s-pin-confirm').value;
+  if (newPin.length === 4) {
+    if (newPin !== confirmPin) { alert('PINs do not match — rates saved but PIN not changed.'); }
+    else { R.pin = newPin; }
+  }
+  // Save all rates
+  R.bucket = parseFloat($('s-bucket').value)||150;
+  R.brush = parseFloat($('s-brush').value)||160;
+  R.grapple = parseFloat($('s-grapple').value)||155;
+  R.jack = parseFloat($('s-jack').value)||175;
+  R.trench = parseFloat($('s-trench').value)||165;
+  R.dispBrush = parseFloat($('s-disp-brush').value)||165;
+  R.dispDirt = parseFloat($('s-disp-dirt').value)||165;
+  R.dispCd = parseFloat($('s-disp-cd').value)||215;
+  R.dispStump = parseFloat($('s-disp-stump').value)||180;
+  R.dispConc = parseFloat($('s-disp-conc').value)||240;
+  R.dispAsph = parseFloat($('s-disp-asph').value)||215;
+  R.dumpCost = parseFloat($('s-dump-cost').value)||98.75;
+  R.trip = parseFloat($('s-trip').value)||65;
+  R.mob1 = parseFloat($('s-mob1').value)||75;
+  R.mob2 = parseFloat($('s-mob2').value)||125;
+  R.mob3 = parseFloat($('s-mob3').value)||175;
+  R.mob4 = parseFloat($('s-mob4').value)||225;
+  R.mob5 = parseFloat($('s-mob5').value)||250;
+  R.mob6 = parseFloat($('s-mob6').value)||300;
+  R.demConc = parseFloat($('s-dem-conc').value)||750;
+  R.demAsph = parseFloat($('s-dem-asph').value)||700;
+  R.demStruct = parseFloat($('s-dem-struct').value)||500;
+  R.demMixed = parseFloat($('s-dem-mixed').value)||600;
+  localStorage.setItem('chew_rates', JSON.stringify(R));
+  applyRatesToCalcs();
+  // Update default trip charge inputs
+  document.querySelectorAll('input[id$="-trip"]').forEach(el => { if(!el._userEdited) el.value = R.trip; });
+  // Recalc everything
+  calcMob(); ['clr','grv','deb','dem','grd','trn'].forEach(s => { if(S[s+'On']) recalc(s); });
+  alert('✅ Rates saved! All calculations updated.');
+  closeSettings();
+}
+
+// Close overlay on outside click
+document.addEventListener('click', e => {
+  if (e.target.id === 'settings-overlay') closeSettings();
+});
+
 // ── DISTANCE CALCULATION — No API key needed ──
 // Uses OpenStreetMap Nominatim for geocoding (free, no key required)
 // Uses Haversine formula for distance calculation
@@ -1501,6 +1752,7 @@ const BASE_LNG = -97.9130;
 
 function saveApiKey() {} // kept for compatibility
 function loadSavedKey() {
+  loadSettings(); // load saved rates from localStorage
   // Auto-show the address field as ready
   setApiStatus('on', 'Address lookup ready — type an address and click GET DIST');
   $('addr-hint').textContent = 'Type full address and click GET DIST to auto-calculate distance';
