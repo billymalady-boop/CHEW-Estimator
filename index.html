@@ -668,7 +668,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
       </div>
     </div>
     <div class="f"><label>Trip Charge Per Load ($/load — default $65)</label>
-      <input type="number" id="gv-trip" value="65" min="0" oninput="calcGrv()">
+      <input type="number" id="gv-trip" value="65" min="0" oninput="this._userEdited=true;calcGrv()">
       <div class="hint">Covers your drive to quarry + return per 5-ton load · edit if quarry is farther</div>
     </div>
     <div class="g4">
@@ -743,7 +743,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
       </div>
     </div>
     <div class="f"><label>Trip Charge Per Load to Transfer Station ($/load — default $65)</label>
-      <input type="number" id="deb-trip" value="65" min="0" oninput="calcDeb()">
+      <input type="number" id="deb-trip" value="65" oninput="this._userEdited=true" min="0" oninput="calcDeb()">
       <div class="hint">Covers 16-mile round trip to 2605 S FM 116 · $65 = ~$10 fuel + 45 min time + trailer wear</div>
     </div>
     <!-- CHEAT STRIP -->
@@ -798,7 +798,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
         </select>
       </div>
       <div class="f"><label>Trip Charge Per Haul Load ($/load)</label>
-        <input type="number" id="dem-trip" value="65" min="0" oninput="calcDem()">
+        <input type="number" id="dem-trip" value="65" oninput="this._userEdited=true" min="0" oninput="calcDem()">
       </div>
     </div>
     <div class="g3">
@@ -1326,7 +1326,7 @@ function calcDem(){
 // ── GRADING ──
 function calcGrd(){
   if(!S.grdOn){S.grd=0;S.grdH=0;updAmt('grd',0,false,'');calcTot();return;}
-  const h=Math.max(2,fv('grd-h')),rate=parseFloat(sv('grd-att'))||150,cx=parseFloat(sv('grd-cx'))||1.0;
+  const h=Math.max(2,fv('grd-h')),rate=parseFloat(sv('grd-att'))||R.bucket,cx=parseFloat(sv('grd-cx'))||1.0;
   const eff=Math.round(rate*cx);const sub=h*rate*cx;
   S.grd=sub;S.grdH=h;
   $('grd-br').textContent='$'+rate+'/hr';
@@ -1774,6 +1774,28 @@ function applyRatesToCalcs() {
   DEB_DATA.wetsoil.chg = R.debWetsoil;
   DEB_DATA.gravel.chg = R.debGravel;
   DEB_DATA.concrete.chg = R.debConcrete;
+  // Update grading attachment dropdown labels and values
+  const grdAtt = $('grd-att');
+  if (grdAtt) {
+    const cur = grdAtt.value;
+    grdAtt.innerHTML = `
+      <option value="${R.bucket}">Bucket — $${R.bucket}/hr</option>
+      <option value="${R.grapple}">Grapple — $${R.grapple}/hr</option>
+      <option value="${R.trench}">Land Planer — $${R.trench}/hr</option>`;
+    grdAtt.value = cur; // restore selection if possible
+  }
+  // Update default trip charge inputs if not user-edited
+  ['deb-trip','gv-trip','dem-trip'].forEach(id => {
+    const el = $(id); if (el && !el._userEdited) el.value = R.trip;
+  });
+  // Update debris disposal rate badges on material cards
+  const debRates = {brush:R.debBrush,yard:R.debYard,household:R.debHousehold,
+    cd:R.debCd,stumps:R.debStumps,dirt:R.debDirt,wetsoil:R.debWetsoil,
+    gravel:R.debGravel,concrete:R.debConcrete};
+  Object.entries(debRates).forEach(([mat,rate]) => {
+    const el = document.querySelector('#mc-'+mat+' .mc-chg');
+    if (el) el.textContent = '$'+rate+'/ton';
+  });
 }
 
 function openSettings() {
