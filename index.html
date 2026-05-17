@@ -41,7 +41,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
 .pamt.z{color:var(--muted);}
 .pb{padding:14px;display:none;}
 .pb.open{display:block;}
-.panel.off{opacity:.4;}
+.panel.off{opacity:.4;}  @media print{.panel.off{display:none!important;opacity:1;}}
 
 /* FORMS */
 .f{margin-bottom:11px;}
@@ -415,7 +415,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
 </div>
 
 <!-- LAND CLEARING -->
-<div class="panel" id="p-clr">
+<div class="panel off" id="p-clr">
   <div class="ph" onclick="togSvc('clr')">
     <div class="ph-left">
       <div class="ptog" id="t-clr" onclick="event.stopPropagation();onOff('clr')">✓</div>
@@ -487,7 +487,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
 </div>
 
 <!-- GRAVEL -->
-<div class="panel" id="p-grv">
+<div class="panel off" id="p-grv">
   <div class="ph" onclick="togSvc('grv')">
     <div class="ph-left">
       <div class="ptog" id="t-grv" onclick="event.stopPropagation();onOff('grv')">✓</div>
@@ -544,7 +544,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
 </div>
 
 <!-- DEBRIS -->
-<div class="panel" id="p-deb">
+<div class="panel off" id="p-deb">
   <div class="ph" onclick="togSvc('deb')">
     <div class="ph-left">
       <div class="ptog" id="t-deb" onclick="event.stopPropagation();onOff('deb')">✓</div>
@@ -630,7 +630,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
 </div>
 
 <!-- DEMOLITION -->
-<div class="panel" id="p-dem">
+<div class="panel off" id="p-dem">
   <div class="ph" onclick="togSvc('dem')">
     <div class="ph-left">
       <div class="ptog" id="t-dem" onclick="event.stopPropagation();onOff('dem')">✓</div>
@@ -669,7 +669,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
 </div>
 
 <!-- GRADING -->
-<div class="panel" id="p-grd">
+<div class="panel off" id="p-grd">
   <div class="ph" onclick="togSvc('grd')">
     <div class="ph-left">
       <div class="ptog" id="t-grd" onclick="event.stopPropagation();onOff('grd')">✓</div>
@@ -709,7 +709,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
 </div>
 
 <!-- TRENCHING -->
-<div class="panel" id="p-trn">
+<div class="panel off" id="p-trn">
   <div class="ph" onclick="togSvc('trn')">
     <div class="ph-left">
       <div class="ptog" id="t-trn" onclick="event.stopPropagation();onOff('trn')">✓</div>
