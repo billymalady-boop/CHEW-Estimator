@@ -787,22 +787,67 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
   </div>
   <div class="pb" id="b-dem">
     <div class="info">⚠ Always conduct a site visit before quoting demo. Hidden footings, rebar, utilities, and asbestos can change scope significantly.</div>
+
+    <!-- AUTO-CALC INPUTS -->
     <div class="g3" style="margin-top:12px">
-      <div class="f"><label>Breaking Hours (Jackhammer $175/hr)</label><input type="number" id="dem-bh" value="2" step="0.5" min="0" oninput="calcDem()"></div>
-      <div class="f"><label>Loading Hours (Grapple $155/hr)</label><input type="number" id="dem-lh" value="1" step="0.5" min="0" oninput="calcDem()"></div>
-      <div class="f"><label>Haul-Off Loads</label><input type="number" id="dem-lo" value="1" min="0" oninput="calcDem()"></div>
-    </div>
-    <div class="g2">
       <div class="f"><label>Demo Material</label>
-        <select id="dem-mat" onchange="calcDem()">
+        <select id="dem-mat" onchange="$('dem-bh')._manualOverride=false;$('dem-lh')._manualOverride=false;$('dem-lo')._manualOverride=false;calcDem()">
           <option value="concrete">Concrete Slab / Foundation</option>
           <option value="asphalt">Asphalt</option>
           <option value="structure">Wood Structure / Shed</option>
           <option value="mixed">Mixed Demo Debris</option>
         </select>
       </div>
+      <div class="f"><label>Size / Scope</label>
+        <div class="rg">
+          <div class="rb on" onclick="sr('dem-size','150',this);$('dem-bh')._manualOverride=false;$('dem-lh')._manualOverride=false;$('dem-lo')._manualOverride=false;calcDem()" title="Up to ~10x15 shed, small slab">Small &lt;200sf</div>
+          <div class="rb" onclick="sr('dem-size','350',this);$('dem-bh')._manualOverride=false;$('dem-lh')._manualOverride=false;$('dem-lo')._manualOverride=false;calcDem()" title="200–500sf slab or structure">Medium 200–500sf</div>
+          <div class="rb" onclick="sr('dem-size','750',this);$('dem-bh')._manualOverride=false;$('dem-lh')._manualOverride=false;$('dem-lo')._manualOverride=false;calcDem()" title="500sf+ slab or large structure">Large 500sf+</div>
+        </div>
+        <input type="hidden" id="dem-size" value="150">
+      </div>
+      <div class="f"><label>Thickness / Density</label>
+        <div class="rg">
+          <div class="rb on" onclick="sr('dem-thick','1.0',this);$('dem-bh')._manualOverride=false;$('dem-lh')._manualOverride=false;$('dem-lo')._manualOverride=false;calcDem()" title="Light slab, thin asphalt, wood frame">1–2 inch / Light</div>
+          <div class="rb" onclick="sr('dem-thick','1.5',this);$('dem-bh')._manualOverride=false;$('dem-lh')._manualOverride=false;$('dem-lo')._manualOverride=false;calcDem()" title="Standard 4in slab, reinforced wood">2–4 inch / Medium</div>
+          <div class="rb" onclick="sr('dem-thick','2.2',this);$('dem-bh')._manualOverride=false;$('dem-lh')._manualOverride=false;$('dem-lo')._manualOverride=false;calcDem()" title="Heavy 6in+ foundation, thick rebar">4–6 inch / Heavy</div>
+        </div>
+        <input type="hidden" id="dem-thick" value="1.0">
+      </div>
+    </div>
+
+    <!-- CALCULATED FIELDS WITH OVERRIDE -->
+    <div class="g3" style="margin-top:4px">
+      <div class="f">
+        <label>Breaking Hours (Jackhammer $175/hr)</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <input type="number" id="dem-bh" step="0.5" min="0" oninput="this._manualOverride=true;calcDem()" style="flex:1;" placeholder="Auto">
+          <button onclick="$('dem-bh')._manualOverride=false;calcDem()" style="background:#333;border:1px solid #555;color:#888;padding:5px 10px;font-size:10px;cursor:pointer;border-radius:3px;white-space:nowrap;letter-spacing:1px;">↺ AUTO</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);" id="dem-bh-hint">Auto-calculated from size &amp; thickness</div>
+      </div>
+      <div class="f">
+        <label>Loading Hours (Grapple $155/hr)</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <input type="number" id="dem-lh" step="0.5" min="0" oninput="this._manualOverride=true;calcDem()" style="flex:1;" placeholder="Auto">
+          <button onclick="$('dem-lh')._manualOverride=false;calcDem()" style="background:#333;border:1px solid #555;color:#888;padding:5px 10px;font-size:10px;cursor:pointer;border-radius:3px;white-space:nowrap;letter-spacing:1px;">↺ AUTO</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);" id="dem-lh-hint">Auto-calculated from breaking hours</div>
+      </div>
+      <div class="f">
+        <label>Haul-Off Loads</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <input type="number" id="dem-lo" min="0" oninput="this._manualOverride=true;calcDem()" style="flex:1;" placeholder="Auto">
+          <button onclick="$('dem-lo')._manualOverride=false;calcDem()" style="background:#333;border:1px solid #555;color:#888;padding:5px 10px;font-size:10px;cursor:pointer;border-radius:3px;white-space:nowrap;letter-spacing:1px;">↺ AUTO</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);" id="dem-lo-hint">Auto-calculated from material &amp; size</div>
+      </div>
+    </div>
+
+    <div class="g2" style="margin-top:4px">
+      <div style="display:none"><label>Demo Material (hidden — set above)</label></div>
       <div class="f"><label>Trip Charge Per Haul Load ($/load)</label>
-        <input type="number" id="dem-trip" value="65" oninput="this._userEdited=true" min="0" oninput="calcDem()">
+        <input type="number" id="dem-trip" value="65" oninput="this._userEdited=true;calcDem()" min="0">
       </div>
     </div>
     <div class="g3">
@@ -1337,10 +1382,50 @@ function calcDeb(){
 }
 
 // ── DEMO ──
-const DEM_HAUL={concrete:750,asphalt:700,structure:500,mixed:600};
+let DEM_HAUL={concrete:750,asphalt:700,structure:500,mixed:600};
+
+// Breaking hrs per 100sf by material
+const DEM_BH_PER100SF={concrete:0.75,asphalt:0.40,structure:0.55,mixed:0.60};
+// Loading hrs as fraction of breaking hrs
+const DEM_LOAD_RATIO={concrete:0.50,asphalt:0.55,structure:0.70,mixed:0.65};
+// Loads per breaking hour
+const DEM_LOADS_PER_BH={concrete:0.60,asphalt:0.70,structure:1.10,mixed:0.80};
+
+function autoCalcDem(mat, sf, thick) {
+  const bh100 = DEM_BH_PER100SF[mat]||0.60;
+  const rawBh = (sf/100) * bh100 * thick;
+  const bh = Math.max(0.5, Math.ceil(rawBh*2)/2);
+  const rawLh = bh * (DEM_LOAD_RATIO[mat]||0.60);
+  const lh = Math.max(0.5, Math.ceil(rawLh*2)/2);
+  const rawLo = bh * (DEM_LOADS_PER_BH[mat]||0.80);
+  const lo = Math.max(1, Math.ceil(rawLo));
+  return {bh, lh, lo};
+}
+
 function calcDem(){
   if(!S.demOn){S.dem=0;S.demH=0;updAmt('dem',0,false,'');calcTot();return;}
-  const bh=fv('dem-bh'),lh=fv('dem-lh'),lo=fv('dem-lo'),trip=fv('dem-trip')||65,mat=sv('dem-mat');
+  const mat=sv('dem-mat');
+  const sf=parseFloat(sv('dem-size'))||150;
+  const thick=parseFloat(sv('dem-thick'))||1.0;
+  const auto=autoCalcDem(mat,sf,thick);
+  const bhEl=$('dem-bh'),lhEl=$('dem-lh'),loEl=$('dem-lo');
+
+  let bh,lh,lo;
+  if(bhEl&&!bhEl._manualOverride){bh=auto.bh;bhEl.value=bh;}else{bh=fv('dem-bh')||auto.bh;}
+  if(lhEl&&!lhEl._manualOverride){lh=auto.lh;lhEl.value=lh;}else{lh=fv('dem-lh')||auto.lh;}
+  if(loEl&&!loEl._manualOverride){lo=auto.lo;loEl.value=lo;}else{lo=fv('dem-lo')||auto.lo;}
+
+  // Update hints
+  try {
+    const bhHint=$('dem-bh-hint');
+    if(bhHint&&!bhEl._manualOverride) bhHint.textContent=`Auto: ${sf}sf ÷ 100 × ${DEM_BH_PER100SF[mat]||0.6} × ${thick}× thick = ${bh}hrs`;
+    const lhHint=$('dem-lh-hint');
+    if(lhHint&&!lhEl._manualOverride) lhHint.textContent=`Auto: ${bh}hrs breaking × ${Math.round((DEM_LOAD_RATIO[mat]||0.6)*100)}% = ${lh}hrs`;
+    const loHint=$('dem-lo-hint');
+    if(loHint&&!loEl._manualOverride) loHint.textContent=`Auto: ${bh}hrs × ${DEM_LOADS_PER_BH[mat]||0.8} loads/hr = ${lo} load${lo>1?'s':''}`;
+  } catch(e){}
+
+  const trip=fv('dem-trip')||65;
   const bl=bh*R.jack,ll=lh*R.grapple,haul=lo*DEM_HAUL[mat]+lo*trip;
   const sub=bl+ll+haul;
   S.dem=sub;S.demH=bh+lh;
