@@ -105,7 +105,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
 .fc{font-size:10px;color:var(--muted);margin-top:1px;}
 
 /* CHEAT STRIP */
-.cs{display:flex;flex-wrap:wrap;gap:5px 14px;background:#0d0d0d;border:1px solid #222;padding:7px 11px;margin-top:8px;}
+.cs{display:flex;flex-wrap:wrap;gap:5px 14px;background:#1a1a1a;border:1px solid #CC2222;border-radius:3px;padding:8px 11px;margin-top:8px;color:#aaaaaa;font-size:10px;}
 .cs span{font-size:10px;color:#444;letter-spacing:1px;font-family:'Barlow Condensed',sans-serif;font-weight:600;text-transform:uppercase;}
 
 /* DIVIDER */
@@ -472,7 +472,9 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
 <!-- ESTIMATE BANNER -->
 <div class="estimate-banner" id="est-banner">
   <div class="eb-title" id="eb-title">⚠ ESTIMATE — NOT A BINDING QUOTE</div>
-  <div class="eb-text">This document is an estimate based on information provided and visible conditions. Final charges are subject to actual site conditions, material weights confirmed at a certified scale, and scope changes discovered during work. Hidden conditions including buried rock, old fence wire, underground utilities, septic systems, irrigation lines, and stumps cannot always be identified before work begins and may affect final pricing. A written change order will be issued before any additional work proceeds.</div>
+  <div class="eb-text">This document is an estimate based on information provided and visible conditions. Final charges are subject to actual site conditions, material weights confirmed at a certified scale, and scope changes discovered during work. Hidden conditions including buried rock, old fence wire, underground utilities, septic systems, irrigation lines, and stumps cannot always be identified before work begins and may affect final pricing. A written change order will be issued before any additional work proceeds.
+
+GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage to grass, turf, landscaping, irrigation systems, and ground surfaces. CHEW is not responsible for reseeding, resodding, repairing turf damage, or restoring ground conditions resulting from normal equipment operation. Customer is responsible for identifying and marking all irrigation heads, sprinkler lines, and landscaping features prior to work starting.</div>
   <div class="eb-text" style="margin-top:8px;color:#cc8833;font-weight:700;">📋 A site visit will be conducted prior to issuing a formal binding quote. Final pricing may vary based on actual site conditions discovered during that visit.</div>
 </div>
 
@@ -516,6 +518,9 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
       <div class="f"><label>Customer Email (for email delivery)</label><input type="email" id="ce" placeholder="customer@email.com"></div>
     </div>
     <div class="f"><label>Scope / Job Description</label><textarea id="jn" placeholder="Describe what you saw — this protects you if scope changes..." oninput="sp()"></textarea></div>
+    <div class="info" style="border-color:#CC2222;background:#1a0a0a;color:#cc8833;margin-top:8px;font-size:11px;">
+      ⚠ <strong style="color:#CC2222;">Ground Damage Notice:</strong> Heavy tracked equipment may cause ruts and turf damage. Customer must mark all irrigation heads, sprinkler lines, and landscaping before work begins. CHEW is not responsible for reseeding, resodding, or repairing turf damage from normal equipment operation.
+    </div>
     <div class="g3">
       <div class="f"><label>Quote Number</label><input type="text" id="qn" oninput="sp()"></div>
       <div class="f"><label>Date</label><input type="date" id="jd" oninput="sp()"></div>
@@ -1730,7 +1735,8 @@ function buildHtmlEmail() {
       • Scope changes discovered during work
     </div>
     <div style="font-size:12px;color:#aaaaaa;line-height:1.8;">
-      <strong style="color:#ffffff;">Customer responsibilities:</strong> Mark all underground utilities, septic components, and known hazards before work begins. Call 811 before any digging.<br><br>
+      <strong style="color:#ffffff;">Customer responsibilities:</strong> Mark all underground utilities, septic components, irrigation heads, sprinkler lines, and known hazards before work begins. Call 811 before any digging.<br><br>
+      <strong style="color:#ffffff;">Ground damage:</strong> Operation of heavy tracked or wheeled equipment may cause damage to grass, turf, landscaping, and ground surfaces. CHEW is not responsible for reseeding, resodding, repairing turf damage, or restoring ground conditions resulting from normal equipment operation.<br><br>
       <strong style="color:#ffffff;">Liability limitation:</strong> CHEW is not liable for pre-existing property conditions, unmarked utilities, or subsurface hazards not visible during site assessment. Any scope change will be presented via written change order before additional work proceeds.<br><br>
       By accepting this ${S.status.toLowerCase()}, customer acknowledges these conditions.
     </div>
