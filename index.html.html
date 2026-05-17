@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHEW Estimator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap');
+:root {
+  --red:#CC2222; --red-dark:#991a1a; --yellow:#F5C400;
+  --black:#0d0d0d; --dark:#1a1a1a; --mid:#2a2a2a;
+  --border:#333; --text:#e8e8e8; --muted:#777;
+  --green:#2ecc71; --panel:#161616;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;}
+
+/* HEADER */
+.app-header{background:var(--dark);border-bottom:3px solid var(--red);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand-name{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:38px;color:var(--red);letter-spacing:4px;line-height:1;}
+.brand-sub{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;line-height:1.5;}
+.hdr-right{display:flex;align-items:center;gap:12px;}
+.hdr-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;color:var(--yellow);letter-spacing:3px;text-transform:uppercase;}
+.live-total{background:var(--red);padding:8px 16px;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;color:#fff;letter-spacing:2px;}
+
+/* LAYOUT */
+.main{display:grid;grid-template-columns:1fr 320px;min-height:calc(100vh - 62px);}
+.lc{padding:18px;border-right:1px solid var(--border);overflow-y:auto;}
+.rc{padding:16px;background:#111;position:sticky;top:62px;height:calc(100vh - 62px);overflow-y:auto;}
+
+/* PANELS */
+.panel{background:var(--panel);border:1px solid var(--border);margin-bottom:14px;}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;}
+.ph-left{display:flex;align-items:center;gap:10px;}
+.ptog{width:18px;height:18px;border:2px solid var(--border);background:var(--mid);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s;font-size:10px;color:transparent;}
+.ptog.on{background:var(--red);border-color:var(--red);color:#fff;font-weight:700;}
+.pt{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:3px;text-transform:uppercase;}
+.psub{font-size:11px;color:var(--muted);margin-left:4px;}
+.pamt{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;color:var(--yellow);}
+.pamt.z{color:var(--muted);}
+.pb{padding:14px;display:none;}
+.pb.open{display:block;}
+.panel.off{opacity:.4;}
+
+/* FORMS */
+.f{margin-bottom:11px;}
+.f label{display:block;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.f input,.f select,.f textarea{width:100%;background:var(--mid);border:1px solid var(--border);color:var(--text);padding:8px 10px;font-family:'Barlow',sans-serif;font-size:13px;outline:none;transition:border-color .15s;-webkit-appearance:none;}
+.f input:focus,.f select:focus{border-color:var(--red);}
+.f select option{background:var(--dark);}
+.f textarea{resize:vertical;min-height:55px;}
+.f .hint{font-size:11px;color:#444;margin-top:3px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:9px;}
+
+/* RADIO */
+.rg{display:flex;gap:5px;flex-wrap:wrap;}
+.rb{flex:1;min-width:55px;background:var(--mid);border:1px solid var(--border);padding:6px 8px;text-align:center;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);transition:all .12s;user-select:none;}
+.rb:hover{border-color:var(--red);color:var(--text);}
+.rb.on{background:var(--red);border-color:var(--red);color:#fff;}
+
+/* CALC DISPLAY */
+.cv{background:var(--mid);border:1px solid var(--border);padding:8px 11px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;color:var(--yellow);}
+.cv.sm{font-size:13px;}
+.cl{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+
+/* WARN / INFO */
+.warn{background:#1a1000;border:1px solid #774400;padding:7px 11px;font-size:11px;color:#cc8833;margin-top:7px;display:none;}
+.warn.show{display:block;}
+.info{background:#0d1520;border:1px solid #1a3a5a;padding:7px 11px;font-size:11px;color:#5599cc;margin-top:7px;}
+.estimate-banner{background:#1a1500;border:2px solid var(--yellow);padding:10px 14px;margin-bottom:12px;}
+.estimate-banner .eb-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:14px;letter-spacing:3px;text-transform:uppercase;color:var(--yellow);margin-bottom:4px;}
+.estimate-banner .eb-text{font-size:11px;color:#aa9933;line-height:1.6;}
+
+/* MATERIAL CARDS */
+.mat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:7px;}
+.mc{background:var(--mid);border:2px solid var(--border);padding:9px 11px;cursor:pointer;transition:all .15s;}
+.mc:hover{border-color:#555;}
+.mc.sel{border-color:var(--red);background:#2a1010;}
+.mc-chk{width:13px;height:13px;border:2px solid var(--border);background:var(--dark);display:inline-block;position:relative;margin-bottom:5px;}
+.mc.sel .mc-chk{background:var(--red);border-color:var(--red);}
+.mc.sel .mc-chk::after{content:'✓';position:absolute;top:-3px;left:1px;font-size:9px;color:#fff;font-weight:700;}
+.mc-n{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:var(--text);letter-spacing:1px;margin-bottom:3px;}
+.mc-d{font-size:10px;color:var(--muted);margin-bottom:2px;}
+.mc-r{font-size:10px;font-weight:600;margin-bottom:3px;}
+.mc-g{color:var(--green);}
+.mc-y{color:#cc9933;}
+.mc-rd{color:var(--red);}
+.mc-tr{display:flex;justify-content:space-between;margin-top:3px;padding-top:3px;border-top:1px solid var(--border);}
+.mc-tl{font-size:10px;color:#444;}
+.mc-tv{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:var(--yellow);}
+.mc-chg{font-size:10px;color:#555;margin-top:2px;}
+
+/* FILL SELECTOR */
+.fill-sel{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:7px;}
+.fo{background:var(--mid);border:2px solid var(--border);padding:8px 6px;cursor:pointer;text-align:center;transition:all .15s;}
+.fo:hover{border-color:#555;}
+.fo.on{border-color:var(--red);background:#2a1010;}
+.fv{width:100%;height:44px;background:#111;border:1px solid var(--border);position:relative;overflow:hidden;margin-bottom:5px;}
+.fb{position:absolute;bottom:0;left:0;right:0;background:var(--red);opacity:.5;}
+.fo.on .fb{opacity:1;}
+.fl{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:var(--text);}
+.fc{font-size:10px;color:var(--muted);margin-top:1px;}
+
+/* CHEAT STRIP */
+.cs{display:flex;flex-wrap:wrap;gap:5px 14px;background:#0d0d0d;border:1px solid #222;padding:7px 11px;margin-top:8px;}
+.cs span{font-size:10px;color:#444;letter-spacing:1px;font-family:'Barlow Condensed',sans-serif;font-weight:600;text-transform:uppercase;}
+
+/* DIVIDER */
+.div{height:1px;background:var(--border);margin:12px 0;}
+
+/* RIGHT COL */
+.rt{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--red);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.sl{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1e1e1e;font-size:12px;}
+.sl .sll{color:var(--muted);}
+.sl .slv{color:var(--text);font-weight:600;}
+.sl .slv.z{color:#333;}
+.strow{display:flex;justify-content:space-between;align-items:center;padding:12px 0 0;margin-top:5px;border-top:2px solid var(--red);}
+.strow .stl{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;letter-spacing:2px;text-transform:uppercase;}
+.strow .stv{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;color:var(--yellow);}
+.dep-row{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-top:1px solid var(--border);margin-top:6px;}
+.dep-row .dl{color:#888;}
+.dep-row .dv{color:var(--yellow);font-weight:700;}
+
+/* PROFIT */
+.pb2{background:#0a150a;border:1px solid #1a3a1a;padding:12px;margin-top:12px;}
+.pbt{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--green);opacity:.6;margin-bottom:8px;}
+.pl{display:flex;justify-content:space-between;padding:4px 0;font-size:11px;border-bottom:1px solid #1a2a1a;}
+.pl .pll{color:#3a5a3a;}
+.pl .plv{color:var(--green);font-weight:600;}
+.ptt{display:flex;justify-content:space-between;padding:8px 0 0;margin-top:5px;border-top:1px solid #2ecc71;}
+.ptt .ptl{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--green);}
+.ptt .ptv{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;color:var(--green);}
+
+/* BUTTONS */
+.btn{padding:10px 18px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;border:none;transition:all .12s;width:100%;margin-bottom:7px;}
+.btn-r{background:var(--red);color:#fff;}
+.btn-r:hover{background:var(--red-dark);}
+.btn-y{background:var(--yellow);color:var(--black);}
+.btn-y:hover{background:#d4a800;}
+.btn-o{background:transparent;color:var(--text);border:1px solid var(--border);}
+.btn-o:hover{border-color:var(--red);color:var(--red);}
+
+/* QR */
+.qref{margin-top:14px;padding:10px;background:#0d0d0d;border:1px solid #222;}
+.qrt{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#333;margin-bottom:7px;}
+.qrl{font-size:11px;color:#3a3a3a;line-height:2.1;}
+
+/* API SETUP */
+.api-setup{background:#0d1520;border:1px solid #1a3a5a;margin-bottom:14px;}
+.api-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5599cc;padding:10px 14px;border-bottom:1px solid #1a3a5a;}
+.api-body{padding:12px 14px;}
+.api-status{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11px;}
+.dot-off{color:#444;font-size:14px;}
+.dot-on{color:var(--green);font-size:14px;}
+.dot-err{color:var(--red);font-size:14px;}
+#api-msg{color:#556677;font-size:11px;}
+.api-help{font-size:10px;color:#334455;margin-top:6px;line-height:1.6;}
+.api-help strong{color:#5599cc;}
+.abtn{background:#1a3a5a;border:1px solid #2a5a8a;color:#5599cc;padding:9px 16px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.abtn:hover{background:#2a5a8a;color:#fff;}
+.addr-status{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--green);display:none;}
+.dist-badge{display:inline-block;background:#0d2a0d;border:1px solid var(--green);padding:3px 8px;font-size:11px;color:var(--green);margin-top:4px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;}
+
+/* MIN WARNING */
+.mw{font-size:11px;color:#cc8833;margin-top:4px;display:none;}
+.mw.show{display:block;}
+
+/* DRIVE SAVE */
+.btn-drive{background:#0d5c2e;color:#fff;border:1px solid #1a8a44;}
+.btn-drive:hover{background:#0a4a24;}
+.drive-status{font-size:11px;color:var(--green);margin-top:6px;display:none;text-align:center;}
+.drive-status.show{display:block;}
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 768px) {
+  /* Header */
+  .app-header{padding:10px 14px;}
+  .brand-name{font-size:28px;}
+  .brand-sub{display:none;}
+  .hdr-title{font-size:12px;letter-spacing:2px;}
+  .live-total{font-size:16px;padding:6px 12px;}
+
+  /* Layout — stack columns */
+  .main{grid-template-columns:1fr;grid-template-rows:auto auto;}
+  .lc{padding:12px;border-right:none;border-bottom:1px solid var(--border);}
+  .rc{position:relative;top:0;height:auto;padding:14px;border-top:3px solid var(--red);}
+
+  /* Grids — collapse to single column on small screens */
+  .g2{grid-template-columns:1fr;}
+  .g3{grid-template-columns:1fr 1fr;}
+  .g4{grid-template-columns:1fr 1fr;}
+
+  /* Material cards — 2 per row on mobile */
+  .mat-grid{grid-template-columns:repeat(2,1fr);}
+
+  /* Fill selector — 2 per row */
+  .fill-sel{grid-template-columns:repeat(2,1fr);}
+
+  /* Bigger touch targets */
+  .rb{padding:10px 8px;font-size:12px;min-height:40px;}
+  .f input,.f select,.f textarea{padding:12px 10px;font-size:15px;}
+  .ptog{width:24px;height:24px;font-size:13px;}
+  .ph{padding:14px;}
+  .pt{font-size:12px;}
+
+  /* Buttons — full width stacked */
+  .btn{padding:14px;font-size:13px;}
+
+  /* Panel amounts */
+  .pamt{font-size:13px;}
+
+  /* Calc values bigger */
+  .cv{font-size:18px;padding:10px 12px;}
+
+  /* Summary column */
+  .strow .stv{font-size:24px;}
+  .rt{font-size:10px;}
+
+  /* Address field */
+  .f input#ja{font-size:14px;}
+}
+
+@media (max-width: 480px) {
+  .g3{grid-template-columns:1fr;}
+  .g4{grid-template-columns:1fr 1fr;}
+  .mat-grid{grid-template-columns:repeat(2,1fr);}
+  .brand-name{font-size:24px;}
+  .live-total{font-size:14px;padding:6px 10px;}
+}
+
+/* ── PRINT ── */
+@media print {
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  body{background:#fff;color:#111;font-size:11px;}
+  .app-header,.no-print{display:none!important;}
+  .main{display:block;}
+  .lc{padding:0;border:none;}
+  .rc{display:none;}
+  .panel{background:#fff;border:1px solid #ddd;page-break-inside:avoid;margin-bottom:8px;}
+  .panel.off{display:none;}
+  .ph{background:#f5f5f5;border-bottom:1px solid #ddd;}
+  .ptog{display:none;}
+  .pt{color:#CC2222;}
+  .pamt{color:#CC2222;}
+  .pb{display:block!important;}
+  .f input,.f select,.f textarea{background:#f9f9f9;color:#111;border:1px solid #ccc;}
+  .cv{background:#f9f9f9;border:1px solid #ddd;color:#CC2222;}
+  .cl{color:#666;}
+  .rg{display:none;}
+  .pb2{display:none;}
+  .warn{display:none!important;}
+  .f .hint{color:#999;}
+  .print-hdr{display:flex!important;}
+  .print-sum{display:block!important;}
+  .mat-grid{display:none;}
+  .fill-sel{display:none;}
+  .cs{display:none;}
+  .estimate-banner{background:#fff8e0;border:2px solid #CC2222;}
+  .estimate-banner .eb-title{color:#CC2222;}
+  .estimate-banner .eb-text{color:#666;}
+}
+.print-hdr{display:none;padding:0 0 16px;margin-bottom:16px;border-bottom:3px solid #CC2222;justify-content:space-between;align-items:flex-start;}
+.pi-name{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:44px;color:#CC2222;letter-spacing:6px;line-height:1;}
+.pi-tag{font-size:10px;color:#666;letter-spacing:2px;text-transform:uppercase;margin-top:3px;}
+.pi-con{font-size:11px;color:#444;margin-top:5px;line-height:1.7;}
+.pi-meta{text-align:right;}
+.pi-ml{font-size:10px;color:#999;letter-spacing:2px;text-transform:uppercase;}
+.pi-mv{font-size:13px;color:#111;font-weight:600;}
+.pi-cust{margin-top:14px;padding-top:14px;border-top:1px solid #ddd;display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.pi-cl{font-size:10px;color:#999;letter-spacing:2px;text-transform:uppercase;}
+.pi-cv{font-size:13px;color:#111;font-weight:600;margin-top:2px;}
+.print-sum{display:none;border:2px solid #CC2222;padding:18px;margin-top:16px;page-break-inside:avoid;}
+.ps-t{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:15px;letter-spacing:3px;text-transform:uppercase;color:#111;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #CC2222;}
+.ps-l{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;font-size:12px;}
+.ps-l .psl{color:#666;}
+.ps-l .psv{color:#111;font-weight:600;}
+.ps-tot{display:flex;justify-content:space-between;padding:12px 0 0;margin-top:7px;border-top:2px solid #CC2222;}
+.ps-tot .pstl{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:16px;letter-spacing:2px;text-transform:uppercase;}
+.ps-tot .pstv{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;color:#CC2222;}
+.ps-dep{display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid #ddd;margin-top:6px;font-size:12px;color:#333;}
+.ps-sec{margin-top:12px;padding-top:10px;border-top:1px solid #ddd;}
+.ps-st{font-size:10px;color:#999;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;}
+.ps-sb{font-size:11px;color:#555;line-height:1.8;}
+.ps-sig{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:28px;padding-top:18px;border-top:1px solid #ddd;}
+.ps-sl{border-top:1px solid #999;padding-top:5px;font-size:10px;color:#999;letter-spacing:1px;text-transform:uppercase;}
+.waiver{background:#fff8e0;border:1px solid #cc9933;padding:10px 12px;margin-top:10px;font-size:10px;color:#665500;line-height:1.8;}
+.waiver strong{color:#333;}
+</style>
+</head>
+<body>
+
+<!-- APP HEADER -->
+<div class="app-header no-print">
+  <div class="brand">
+    <div class="brand-name">CHEW</div>
+    <div class="brand-sub">Clearing · Hauling<br>Earthwork · Waste<br>Copperas Cove, TX</div>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-title">Job Estimator</div>
+    <div class="live-total" id="live-total">$0</div>
+  </div>
+</div>
+
+<!-- PRINT HEADER -->
+<div class="print-hdr" id="print-hdr">
+  <div>
+    <div class="pi-name">CHEW</div>
+    <div class="pi-tag">Clearing · Hauling · Earthwork · Waste Removal</div>
+    <div class="pi-con">1125 Lindorbet Rd · Copperas Cove, TX 76522<br>Central Texas Site Services · <span id="ph-biz"></span></div>
+  </div>
+  <div class="pi-meta">
+    <div class="pi-ml">Document Type</div><div class="pi-mv" id="ph-status">ESTIMATE</div>
+    <div class="pi-ml" style="margin-top:6px">Quote #</div><div class="pi-mv" id="ph-qnum">—</div>
+    <div class="pi-ml" style="margin-top:6px">Date</div><div class="pi-mv" id="ph-date">—</div>
+    <div class="pi-ml" style="margin-top:6px">Valid For</div><div class="pi-mv" id="ph-valid">30 days</div>
+  </div>
+</div>
+<div class="pi-cust" id="pi-cust" style="display:none">
+  <div><div class="pi-cl">Customer</div><div class="pi-cv" id="ph-cust">—</div>
+  <div class="pi-cl" style="margin-top:7px">Phone</div><div class="pi-cv" id="ph-cphone">—</div></div>
+  <div><div class="pi-cl">Job Site</div><div class="pi-cv" id="ph-addr">—</div>
+  <div class="pi-cl" style="margin-top:7px">Description</div><div class="pi-cv" id="ph-notes" style="font-weight:400;font-size:11px">—</div></div>
+</div>
+
+<div class="main">
+<div class="lc">
+
+<!-- ESTIMATE BANNER -->
+<div class="estimate-banner" id="est-banner">
+  <div class="eb-title" id="eb-title">⚠ ESTIMATE — NOT A BINDING QUOTE</div>
+  <div class="eb-text">This document is an estimate based on information provided and visible conditions. Final charges are subject to actual site conditions, material weights confirmed at a certified scale, and scope changes discovered during work. Hidden conditions including buried rock, old fence wire, underground utilities, septic systems, irrigation lines, and stumps cannot always be identified before work begins and may affect final pricing. A written change order will be issued before any additional work proceeds.</div>
+</div>
+
+<!-- JOB INFO -->
+<div class="panel">
+  <div class="ph" onclick="tog('ji')">
+    <div class="ph-left"><div class="pt">Job Information</div></div>
+    <span style="color:var(--muted);font-size:11px" id="ji-arr">▲</span>
+  </div>
+  <div class="pb open" id="ji">
+    <div class="g2">
+      <div class="f"><label>Customer Name</label><input type="text" id="cn" placeholder="Full name" oninput="sp()"></div>
+      <div class="f"><label>Customer Phone</label><input type="text" id="cp" placeholder="(254) 000-0000" oninput="sp()"></div>
+    </div>
+    <!-- ADDRESS LOOKUP — No API key needed -->
+    <div class="api-setup" id="api-setup">
+      <div class="api-title">📍 Address Distance Lookup</div>
+      <div class="api-body">
+        <div class="api-status" id="api-status">
+          <span id="api-dot" class="dot-on">●</span>
+          <span id="api-msg">Address lookup ready — type address and click GET DIST or press Enter</span>
+        </div>
+        <div class="api-help">
+          Powered by OpenStreetMap · No API key required · Works on any device · Distance is driving estimate from 1125 Lindorbet Rd, Copperas Cove TX
+        </div>
+      </div>
+    </div>
+
+    <div class="f">
+      <label>Job Site Address</label>
+      <div style="position:relative;display:flex;gap:8px;">
+        <input type="text" id="ja" placeholder="Start typing address — autocomplete will appear if API key is active" oninput="sp()" autocomplete="off" style="flex:1;">
+        <button onclick="lookupDistance()" style="background:#1a3a5a;border:1px solid #2a5a8a;color:#5599cc;padding:0 14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;white-space:nowrap;flex-shrink:0;" title="Click to calculate distance from typed address">GET DIST</button>
+      </div>
+      <div class="addr-status" id="addr-status" style="position:static;transform:none;margin-top:4px;font-size:11px;color:var(--green);display:none;"></div>
+      <div class="hint" id="addr-hint">Enter API key above to enable · or type address and click GET DIST</div>
+    </div>
+
+    <div class="g2">
+      <div class="f"><label>Your Business Phone</label><input type="text" id="bp" placeholder="(254) 000-0000" oninput="sp()"></div>
+      <div class="f"><label>Customer Email (for email delivery)</label><input type="email" id="ce" placeholder="customer@email.com"></div>
+    </div>
+    <div class="f"><label>Scope / Job Description</label><textarea id="jn" placeholder="Describe what you saw — this protects you if scope changes..." oninput="sp()"></textarea></div>
+    <div class="g3">
+      <div class="f"><label>Quote Number</label><input type="text" id="qn" oninput="sp()"></div>
+      <div class="f"><label>Date</label><input type="date" id="jd" oninput="sp()"></div>
+      <div class="f"><label>Document Status</label>
+        <div class="rg">
+          <div class="rb on" onclick="setStatus('ESTIMATE',this)">Estimate</div>
+          <div class="rb" onclick="setStatus('QUOTE',this)">Quote</div>
+          <div class="rb" onclick="setStatus('INVOICE',this)">Invoice</div>
+        </div>
+      </div>
+    </div>
+    <div class="g3">
+      <div class="f">
+        <label>Distance from Base (miles)</label>
+        <input type="number" id="dist" placeholder="Auto or manual" min="0" max="60" oninput="calcMob()">
+        <div class="hint">Auto-fills when address is selected · or type manually</div>
+      </div>
+      <div>
+        <div class="cl">Drive Time (est.)</div>
+        <div class="cv sm" id="drive-time" style="font-size:13px">—</div>
+        <div class="hint">From base to job site</div>
+      </div>
+      <div>
+        <div class="cl">Mobilization Fee</div>
+        <div class="cv" id="mob-d">$0</div>
+        <div class="hint">Auto-calculated from distance</div>
+      </div>
+    </div>
+    <div class="warn show" id="dist-warn" style="display:none!important">⚠ Job site is over 60 miles from base — outside standard service radius. Add travel surcharge or decline job.</div>
+    <div class="f"><label>Quote Valid For</label>
+      <div class="rg">
+        <div class="rb on" onclick="sr('vf','30 days',this);sp()">30 Days</div>
+        <div class="rb" onclick="sr('vf','14 days',this);sp()">14 Days</div>
+        <div class="rb" onclick="sr('vf','60 days',this);sp()">60 Days</div>
+      </div>
+      <input type="hidden" id="vf" value="30 days">
+    </div>
+  </div>
+</div>
+
+<!-- LAND CLEARING -->
+<div class="panel" id="p-clr">
+  <div class="ph" onclick="togSvc('clr')">
+    <div class="ph-left">
+      <div class="ptog" id="t-clr" onclick="event.stopPropagation();onOff('clr')">✓</div>
+      <div class="pt">Land Clearing / Brush Hogging</div>
+      <div class="psub" id="s-clr"></div>
+    </div>
+    <div class="pamt z" id="a-clr">—</div>
+  </div>
+  <div class="pb" id="b-clr">
+    <div class="g3">
+      <div class="f"><label>Acreage</label><input type="number" id="clr-ac" placeholder="0.0" step="0.25" oninput="calcClr()"></div>
+      <div class="f"><label>Brush Density</label>
+        <div class="rg">
+          <div class="rb on" onclick="sr('clr-den','1',this);calcClr()">L1 Sparse</div>
+          <div class="rb" onclick="sr('clr-den','2',this);calcClr()">L2 Moderate</div>
+          <div class="rb" onclick="sr('clr-den','3',this);calcClr()">L3 Heavy</div>
+        </div>
+        <input type="hidden" id="clr-den" value="1">
+        <div class="hint">L1=open pasture · L2=mixed cedar · L3=thick brush/deadfall</div>
+      </div>
+      <div class="f"><label>Primary Attachment</label>
+        <div class="rg">
+          <div class="rb on" onclick="sr('clr-att','brush',this);calcClr()">Brush Hog</div>
+          <div class="rb" onclick="sr('clr-att','grapple',this);calcClr()">Grapple</div>
+          <div class="rb" onclick="sr('clr-att','bucket',this);calcClr()">Bucket</div>
+        </div>
+        <input type="hidden" id="clr-att" value="brush">
+      </div>
+    </div>
+    <div class="g3">
+      <div class="f"><label>Terrain</label>
+        <div class="rg">
+          <div class="rb on" onclick="sr('clr-ter','1.0',this);calcClr()">Flat</div>
+          <div class="rb" onclick="sr('clr-ter','1.15',this);calcClr()">Sloped</div>
+          <div class="rb" onclick="sr('clr-ter','1.3',this);calcClr()">Hilly</div>
+        </div>
+        <input type="hidden" id="clr-ter" value="1.0">
+      </div>
+      <div class="f"><label>Ground Condition</label>
+        <div class="rg">
+          <div class="rb on" onclick="sr('clr-rck','1.0',this);calcClr()">No Rock</div>
+          <div class="rb" onclick="sr('clr-rck','1.2',this);calcClr()">Caliche</div>
+          <div class="rb" onclick="sr('clr-rck','1.4',this);calcClr()">Heavy Rock</div>
+        </div>
+        <input type="hidden" id="clr-rck" value="1.0">
+      </div>
+      <div class="f"><label>Debris Handling</label>
+        <select id="clr-deb" onchange="calcClr()">
+          <option value="0">Pile on property — customer burns</option>
+          <option value="0">Brush hog / mulch in place</option>
+          <option value="1">Haul off — add Debris section below</option>
+        </select>
+      </div>
+    </div>
+    <div class="g4">
+      <div><div class="cl">Base Rate</div><div class="cv sm" id="clr-br">—</div></div>
+      <div><div class="cl">Multiplier</div><div class="cv sm" id="clr-mx">—</div></div>
+      <div><div class="cl">Effective Rate</div><div class="cv sm" id="clr-er">—</div></div>
+      <div><div class="cl">Est. Hours</div><div class="cv sm" id="clr-hr">—</div></div>
+    </div>
+    <div style="margin-top:10px">
+      <div class="cl">Clearing Subtotal</div>
+      <div class="cv" id="clr-sub">—</div>
+    </div>
+    <div class="warn" id="clr-min">⚠ Below $400 minimum — adjusted up to $400</div>
+    <div class="warn" id="clr-haul">⚠ Haul-off selected — activate the Debris section below and it will be added to your total</div>
+    <div class="info" style="margin-top:8px">Hidden hazard note: Tall brush may conceal old fence wire, buried rock, stumps, and unmarked structures. Density and terrain may differ from visual estimate. This section will be flagged as estimated on all documents.</div>
+  </div>
+</div>
+
+<!-- GRAVEL -->
+<div class="panel" id="p-grv">
+  <div class="ph" onclick="togSvc('grv')">
+    <div class="ph-left">
+      <div class="ptog" id="t-grv" onclick="event.stopPropagation();onOff('grv')">✓</div>
+      <div class="pt">Gravel / Material Spreading</div>
+      <div class="psub" id="s-grv"></div>
+    </div>
+    <div class="pamt z" id="a-grv">—</div>
+  </div>
+  <div class="pb" id="b-grv">
+    <div class="g4">
+      <div class="f"><label>Length (ft)</label><input type="number" id="gv-l" placeholder="0" oninput="calcGrv()"></div>
+      <div class="f"><label>Width (ft)</label><input type="number" id="gv-w" placeholder="0" oninput="calcGrv()"></div>
+      <div class="f"><label>Depth (inches)</label><input type="number" id="gv-d" value="4" oninput="calcGrv()"></div>
+      <div><div class="cl">Calc. Tons Needed</div><div class="cv" id="gv-tons">—</div></div>
+    </div>
+    <div class="g3">
+      <div class="f"><label>Material Type</label>
+        <select id="gv-mat" onchange="calcGrv()">
+          <option value="flexbase">Flex Base / Crusher Run</option>
+          <option value="crushed">¾" Crushed Limestone</option>
+          <option value="screenings">Screenings / Fines</option>
+          <option value="caliche">Caliche Base</option>
+          <option value="custom">Custom (enter price below)</option>
+        </select>
+      </div>
+      <div class="f"><label>Your Quarry Cost ($/ton) — override</label>
+        <input type="number" id="gv-cost" placeholder="auto" step="0.50" oninput="calcGrv()">
+        <div class="hint">Leave blank to use default · enter your actual pit price to override</div>
+      </div>
+      <div class="f"><label>Surface Condition</label>
+        <select id="gv-cond" onchange="calcGrv()">
+          <option value="0">Good — top dress only</option>
+          <option value="75">Fair — minor prep needed</option>
+          <option value="200">Poor — regrade before material</option>
+        </select>
+      </div>
+    </div>
+    <div class="f"><label>Trip Charge Per Load ($/load — default $65)</label>
+      <input type="number" id="gv-trip" value="65" min="0" oninput="calcGrv()">
+      <div class="hint">Covers your drive to quarry + return per 5-ton load · edit if quarry is farther</div>
+    </div>
+    <div class="g4">
+      <div><div class="cl">Loads (~5t ea)</div><div class="cv sm" id="gv-loads">—</div></div>
+      <div><div class="cl">Material Charge</div><div class="cv sm" id="gv-mc">—</div></div>
+      <div><div class="cl">Trip Charges</div><div class="cv sm" id="gv-tc">—</div></div>
+      <div><div class="cl">Spread &amp; Grade</div><div class="cv sm" id="gv-sc">—</div></div>
+    </div>
+    <div style="margin-top:10px"><div class="cl">Gravel Job Subtotal</div><div class="cv" id="gv-sub">—</div></div>
+    <div class="g2" style="margin-top:10px">
+      <div><div class="cl">Your Material Cost (actual)</div><div class="cv sm" style="color:var(--muted)" id="gv-matcost">—</div></div>
+      <div class="f"><label>Customer-facing note (optional)</label><input type="text" id="gv-note" placeholder="e.g. Includes 2 loads flex base, spread and graded..."></div>
+    </div>
+  </div>
+</div>
+
+<!-- DEBRIS -->
+<div class="panel" id="p-deb">
+  <div class="ph" onclick="togSvc('deb')">
+    <div class="ph-left">
+      <div class="ptog" id="t-deb" onclick="event.stopPropagation();onOff('deb')">✓</div>
+      <div class="pt">Debris &amp; Waste Removal</div>
+      <div class="psub" id="s-deb"></div>
+    </div>
+    <div class="pamt z" id="a-deb">—</div>
+  </div>
+  <div class="pb" id="b-deb">
+    <!-- STEP 1 -->
+    <div class="f">
+      <label>Step 1 — Select Material (click card)</label>
+      <div class="mat-grid">
+        <div class="mc sel" id="mc-brush" onclick="selMat('brush')"><div class="mc-chk"></div><div class="mc-n">Brush (Loose)</div><div class="mc-d">10–15 lbs/cf</div><div class="mc-r mc-g">✓ Full load OK</div><div class="mc-tr"><span class="mc-tl">Full:</span><span class="mc-tv">~1.2t</span></div><div class="mc-chg">$165/ton</div></div>
+        <div class="mc" id="mc-yard" onclick="selMat('yard')"><div class="mc-chk"></div><div class="mc-n">Yard Waste</div><div class="mc-d">10–20 lbs/cf</div><div class="mc-r mc-g">✓ Full load OK</div><div class="mc-tr"><span class="mc-tl">Full:</span><span class="mc-tv">~1.5t</span></div><div class="mc-chg">$165/ton</div></div>
+        <div class="mc" id="mc-household" onclick="selMat('household')"><div class="mc-chk"></div><div class="mc-n">Household Junk</div><div class="mc-d">20–35 lbs/cf</div><div class="mc-r mc-g">✓ Full load OK</div><div class="mc-tr"><span class="mc-tl">Full:</span><span class="mc-tv">~2.7t</span></div><div class="mc-chg">$215/ton</div></div>
+        <div class="mc" id="mc-cd" onclick="selMat('cd')"><div class="mc-chk"></div><div class="mc-n">C&amp;D Debris</div><div class="mc-d">30–50 lbs/cf</div><div class="mc-r mc-y">⚠ ¾ load max</div><div class="mc-tr"><span class="mc-tl">¾:</span><span class="mc-tv">~2.9–4.9t</span></div><div class="mc-chg">$215/ton</div></div>
+        <div class="mc" id="mc-stumps" onclick="selMat('stumps')"><div class="mc-chk"></div><div class="mc-n">Stumps / Roots</div><div class="mc-d">40–60 lbs/cf</div><div class="mc-r mc-y">⚠ ¾ load max</div><div class="mc-tr"><span class="mc-tl">¾:</span><span class="mc-tv">~2.9–4.4t</span></div><div class="mc-chg">$180/ton</div></div>
+        <div class="mc" id="mc-dirt" onclick="selMat('dirt')"><div class="mc-chk"></div><div class="mc-n">Dirt (Loose)</div><div class="mc-d">75–85 lbs/cf</div><div class="mc-r mc-rd">🛑 ¾ load MAX</div><div class="mc-tr"><span class="mc-tl">¾:</span><span class="mc-tv">~5.5–6.2t</span></div><div class="mc-chg">$165/ton</div></div>
+        <div class="mc" id="mc-wetsoil" onclick="selMat('wetsoil')"><div class="mc-chk"></div><div class="mc-n">Wet Soil / Mud</div><div class="mc-d">100–120 lbs/cf</div><div class="mc-r mc-rd">🛑 ½ load MAX</div><div class="mc-tr"><span class="mc-tl">½:</span><span class="mc-tv">~4.9–5.9t</span></div><div class="mc-chg">$165/ton</div></div>
+        <div class="mc" id="mc-gravel" onclick="selMat('gravel')"><div class="mc-chk"></div><div class="mc-n">Gravel / Rock</div><div class="mc-d">90–105 lbs/cf</div><div class="mc-r mc-rd">🛑 ½ load MAX</div><div class="mc-tr"><span class="mc-tl">½:</span><span class="mc-tv">~4.4–5.1t</span></div><div class="mc-chg">$165/ton</div></div>
+        <div class="mc" id="mc-concrete" onclick="selMat('concrete')"><div class="mc-chk"></div><div class="mc-n">Concrete / Asphalt</div><div class="mc-d">100–150 lbs/cf</div><div class="mc-r mc-rd">🛑 ¼ load MAX</div><div class="mc-tr"><span class="mc-tl">¼:</span><span class="mc-tv">~2.4–3.7t</span></div><div class="mc-chg">$240/ton</div></div>
+      </div>
+      <input type="hidden" id="deb-mat" value="brush">
+    </div>
+    <!-- STEP 2 -->
+    <div class="f" style="margin-top:12px">
+      <label>Step 2 — Trailer Fill Level Per Load</label>
+      <div class="fill-sel">
+        <div class="fo" id="fo-25" onclick="setFill('0.25',this)"><div class="fv"><div class="fb" style="height:25%"></div></div><div class="fl">¼ Load</div><div class="fc">49 cf</div></div>
+        <div class="fo on" id="fo-50" onclick="setFill('0.50',this)"><div class="fv"><div class="fb" style="height:50%"></div></div><div class="fl">½ Load</div><div class="fc">98 cf</div></div>
+        <div class="fo" id="fo-75" onclick="setFill('0.75',this)"><div class="fv"><div class="fb" style="height:75%"></div></div><div class="fl">¾ Load</div><div class="fc">147 cf</div></div>
+        <div class="fo" id="fo-100" onclick="setFill('1.0',this)"><div class="fv"><div class="fb" style="height:100%"></div></div><div class="fl">Full</div><div class="fc">196 cf</div></div>
+      </div>
+      <input type="hidden" id="deb-fill" value="0.50">
+    </div>
+    <div class="warn" id="deb-fill-warn">⚠ Fill level exceeds recommended maximum for this material — trailer may be overweight</div>
+    <div class="warn" id="deb-heavy">⚠ Estimated load exceeds 11,500 lb payload limit — reduce fill or split into multiple loads</div>
+    <!-- STEP 3 -->
+    <div class="g3" style="margin-top:12px">
+      <div class="f"><label>Number of Loads</label>
+        <input type="number" id="deb-loads" value="1" min="1" oninput="calcDeb()">
+        <div class="hint">Each load = one trip to transfer station</div>
+      </div>
+      <div class="f"><label>Loading Attachment</label>
+        <div class="rg">
+          <div class="rb on" onclick="sr('deb-att','grapple',this);calcDeb()">Grapple $155</div>
+          <div class="rb" onclick="sr('deb-att','bucket',this);calcDeb()">Bucket $150</div>
+        </div>
+        <input type="hidden" id="deb-att" value="grapple">
+      </div>
+      <div class="f"><label>Machine Loading Time (hrs)</label>
+        <input type="number" id="deb-mhrs" value="1" step="0.5" min="0.5" oninput="calcDeb()">
+      </div>
+    </div>
+    <div class="f"><label>Trip Charge Per Load to Transfer Station ($/load — default $65)</label>
+      <input type="number" id="deb-trip" value="65" min="0" oninput="calcDeb()">
+      <div class="hint">Covers 16-mile round trip to 2605 S FM 116 · $65 = ~$10 fuel + 45 min time + trailer wear</div>
+    </div>
+    <!-- CHEAT STRIP -->
+    <div class="cs">
+      <span>7×14×2 = 196cf max</span>
+      <span>cf × lbs/cf ÷ 2,000 = tons</span>
+      <span>+15% buffer auto-applied</span>
+      <span>Disposal $98.75/ton</span>
+      <span>Scale closes 3:30PM Mon–Fri</span>
+      <span>Station 8 mi from base</span>
+    </div>
+    <!-- RESULTS -->
+    <div class="g4" style="margin-top:10px">
+      <div><div class="cl">Density (lbs/cf)</div><div class="cv sm" id="deb-dens">—</div></div>
+      <div><div class="cl">Tons/Load (est.)</div><div class="cv sm" id="deb-tpl">—</div></div>
+      <div><div class="cl">Total Tons (+15%)</div><div class="cv sm" id="deb-tot">—</div></div>
+      <div><div class="cl">Disposal Charge</div><div class="cv sm" id="deb-disp">—</div></div>
+    </div>
+    <div class="g3" style="margin-top:8px">
+      <div><div class="cl">Machine Loading</div><div class="cv sm" id="deb-mach">—</div></div>
+      <div><div class="cl">Trip Charges (all loads)</div><div class="cv sm" id="deb-tripc">—</div></div>
+      <div><div class="cl">Your Disposal Cost</div><div class="cv sm" style="color:var(--muted)" id="deb-actual">—</div></div>
+    </div>
+    <div style="margin-top:10px"><div class="cl">Debris Section Subtotal</div><div class="cv" id="deb-sub">—</div></div>
+  </div>
+</div>
+
+<!-- DEMOLITION -->
+<div class="panel" id="p-dem">
+  <div class="ph" onclick="togSvc('dem')">
+    <div class="ph-left">
+      <div class="ptog" id="t-dem" onclick="event.stopPropagation();onOff('dem')">✓</div>
+      <div class="pt">Demolition Cleanup</div>
+      <div class="psub" id="s-dem"></div>
+    </div>
+    <div class="pamt z" id="a-dem">—</div>
+  </div>
+  <div class="pb" id="b-dem">
+    <div class="info">⚠ Always conduct a site visit before quoting demo. Hidden footings, rebar, utilities, and asbestos can change scope significantly.</div>
+    <div class="g3" style="margin-top:12px">
+      <div class="f"><label>Breaking Hours (Jackhammer $175/hr)</label><input type="number" id="dem-bh" value="2" step="0.5" min="0" oninput="calcDem()"></div>
+      <div class="f"><label>Loading Hours (Grapple $155/hr)</label><input type="number" id="dem-lh" value="1" step="0.5" min="0" oninput="calcDem()"></div>
+      <div class="f"><label>Haul-Off Loads</label><input type="number" id="dem-lo" value="1" min="0" oninput="calcDem()"></div>
+    </div>
+    <div class="g2">
+      <div class="f"><label>Demo Material</label>
+        <select id="dem-mat" onchange="calcDem()">
+          <option value="concrete">Concrete Slab / Foundation</option>
+          <option value="asphalt">Asphalt</option>
+          <option value="structure">Wood Structure / Shed</option>
+          <option value="mixed">Mixed Demo Debris</option>
+        </select>
+      </div>
+      <div class="f"><label>Trip Charge Per Haul Load ($/load)</label>
+        <input type="number" id="dem-trip" value="65" min="0" oninput="calcDem()">
+      </div>
+    </div>
+    <div class="g3">
+      <div><div class="cl">Breaking Labor</div><div class="cv sm" id="dem-bl">—</div></div>
+      <div><div class="cl">Loading Labor</div><div class="cv sm" id="dem-ll">—</div></div>
+      <div><div class="cl">Haul-Off + Trips</div><div class="cv sm" id="dem-hl">—</div></div>
+    </div>
+    <div style="margin-top:10px"><div class="cl">Demo Subtotal</div><div class="cv" id="dem-sub">—</div></div>
+  </div>
+</div>
+
+<!-- GRADING -->
+<div class="panel" id="p-grd">
+  <div class="ph" onclick="togSvc('grd')">
+    <div class="ph-left">
+      <div class="ptog" id="t-grd" onclick="event.stopPropagation();onOff('grd')">✓</div>
+      <div class="pt">Grading / Site Prep</div>
+      <div class="psub" id="s-grd"></div>
+    </div>
+    <div class="pamt z" id="a-grd">—</div>
+  </div>
+  <div class="pb" id="b-grd">
+    <div class="g3">
+      <div class="f"><label>Estimated Hours (2-hr minimum)</label>
+        <input type="number" id="grd-h" value="2" step="0.5" min="2" oninput="calcGrd()">
+        <div class="hint">2-hour minimum enforced</div>
+      </div>
+      <div class="f"><label>Attachment</label>
+        <select id="grd-att" onchange="calcGrd()">
+          <option value="150">Bucket — $150/hr</option>
+          <option value="165">Land Planer — $165/hr</option>
+          <option value="155">Grapple — $155/hr</option>
+        </select>
+      </div>
+      <div class="f"><label>Complexity</label>
+        <div class="rg">
+          <div class="rb on" onclick="sr('grd-cx','1.0',this);calcGrd()">Standard</div>
+          <div class="rb" onclick="sr('grd-cx','1.2',this);calcGrd()">Moderate</div>
+          <div class="rb" onclick="sr('grd-cx','1.4',this);calcGrd()">Complex</div>
+        </div>
+        <input type="hidden" id="grd-cx" value="1.0">
+      </div>
+    </div>
+    <div class="g3">
+      <div><div class="cl">Base Rate</div><div class="cv sm" id="grd-br">—</div></div>
+      <div><div class="cl">Effective Rate</div><div class="cv sm" id="grd-er">—</div></div>
+      <div><div class="cl">Grading Subtotal</div><div class="cv" id="grd-sub">—</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TRENCHING -->
+<div class="panel" id="p-trn">
+  <div class="ph" onclick="togSvc('trn')">
+    <div class="ph-left">
+      <div class="ptog" id="t-trn" onclick="event.stopPropagation();onOff('trn')">✓</div>
+      <div class="pt">Trenching / Digging Arm</div>
+      <div class="psub" id="s-trn"></div>
+    </div>
+    <div class="pamt z" id="a-trn">—</div>
+  </div>
+  <div class="pb" id="b-trn">
+    <div class="info">⚠ Call 811 before any digging. Utility locate required — allow 2–3 business days. Never dig without marks.</div>
+    <div class="g3" style="margin-top:12px">
+      <div class="f"><label>Trench Length (ft)</label><input type="number" id="trn-l" placeholder="0" oninput="calcTrn()"></div>
+      <div class="f"><label>Depth</label>
+        <select id="trn-dep" onchange="calcTrn()">
+          <option value="1.0">Shallow — under 2ft</option>
+          <option value="1.15">Medium — 2 to 4ft</option>
+          <option value="1.35">Deep — over 4ft</option>
+        </select>
+      </div>
+      <div class="f"><label>Soil / Ground</label>
+        <select id="trn-soil" onchange="calcTrn()">
+          <option value="1.0">Normal soil</option>
+          <option value="1.2">Caliche / hard pack</option>
+          <option value="1.4">Rock — jackhammer needed</option>
+        </select>
+      </div>
+    </div>
+    <div class="g3">
+      <div><div class="cl">Est. Hours (2-hr min)</div><div class="cv sm" id="trn-hr">—</div></div>
+      <div><div class="cl">Rate $165/hr</div><div class="cv sm" id="trn-rate">$165/hr</div></div>
+      <div><div class="cl">Trenching Subtotal</div><div class="cv" id="trn-sub">—</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADDITIONAL CHARGES -->
+<div class="panel">
+  <div class="ph" onclick="tog('ext')">
+    <div class="ph-left"><div class="pt">Additional Charges &amp; Terms</div></div>
+    <span style="color:var(--muted);font-size:11px" id="ext-arr">▼</span>
+  </div>
+  <div class="pb" id="ext">
+    <div class="g3">
+      <div class="f"><label>After-Hours / Weekend</label>
+        <div class="rg">
+          <div class="rb on" onclick="sr('sur','0',this);calcTot()">None</div>
+          <div class="rb" onclick="sr('sur','50',this);calcTot()">+$50</div>
+          <div class="rb" onclick="sr('sur','100',this);calcTot()">+$100</div>
+        </div>
+        <input type="hidden" id="sur" value="0">
+      </div>
+      <div class="f"><label>Rush / Emergency Premium</label>
+        <div class="rg">
+          <div class="rb on" onclick="sr('rush','0',this);calcTot()">None</div>
+          <div class="rb" onclick="sr('rush','75',this);calcTot()">+$75</div>
+          <div class="rb" onclick="sr('rush','150',this);calcTot()">+$150</div>
+        </div>
+        <input type="hidden" id="rush" value="0">
+      </div>
+      <div class="f"><label>Misc / Other ($)</label>
+        <input type="number" id="misc" value="0" min="0" oninput="calcTot()">
+      </div>
+    </div>
+    <div class="f"><label>Contingency Buffer</label>
+      <div class="rg">
+        <div class="rb" onclick="sr('cont','0',this);calcTot()">None</div>
+        <div class="rb on" onclick="sr('cont','10',this);calcTot()">10%</div>
+        <div class="rb" onclick="sr('cont','15',this);calcTot()">15%</div>
+        <div class="rb" onclick="sr('cont','20',this);calcTot()">20%</div>
+      </div>
+      <input type="hidden" id="cont" value="10">
+      <div class="hint">Recommended 10–15% for jobs with unknown site conditions</div>
+    </div>
+    <div class="g3">
+      <div class="f"><label>Deposit Required</label>
+        <div class="rg">
+          <div class="rb on" onclick="sr('dep','0',this);calcTot()">None</div>
+          <div class="rb" onclick="sr('dep','25',this);calcTot()">25%</div>
+          <div class="rb" onclick="sr('dep','50',this);calcTot()">50%</div>
+        </div>
+        <input type="hidden" id="dep" value="0">
+      </div>
+      <div class="f"><label>Payment Terms</label>
+        <select id="pterm">
+          <option>Due on completion</option>
+          <option>Net 7</option><option>Net 15</option><option>Net 30</option>
+        </select>
+      </div>
+      <div><div class="cl">Deposit Amount</div><div class="cv sm" id="dep-amt">$0</div></div>
+    </div>
+    <div class="f"><label>Exclusions / Special Notes for Customer</label>
+      <textarea id="excl" placeholder="e.g. Haul-off not included. Customer to mark sprinkler heads and septic lid before work. Concrete disposal priced separately..."></textarea>
+    </div>
+    <!-- SCALE RECONCILIATION -->
+    <div class="div"></div>
+    <div class="g2">
+      <div class="f"><label>Actual Scale Weight (tons) — enter after job to reconcile</label>
+        <input type="number" id="scale-actual" placeholder="Enter scale ticket weight" step="0.01" oninput="calcTot()">
+        <div class="hint">Enter certified scale ticket tons to recalculate final disposal charge</div>
+      </div>
+      <div><div class="cl">Adjusted Disposal (if scale entered)</div><div class="cv sm" id="scale-adj">—</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT SUMMARY -->
+<div class="print-sum" id="print-sum">
+  <div class="ps-t">Quote Summary</div>
+  <div class="ps-l" id="psl-mob"><span class="psl">Mobilization</span><span class="psv" id="psv-mob">$0</span></div>
+  <div class="ps-l" id="psl-clr" style="display:none"><span class="psl">Land Clearing / Brush Hogging</span><span class="psv" id="psv-clr">—</span></div>
+  <div class="ps-l" id="psl-grv" style="display:none"><span class="psl">Gravel / Material Spreading</span><span class="psv" id="psv-grv">—</span></div>
+  <div class="ps-l" id="psl-deb" style="display:none"><span class="psl">Debris &amp; Waste Removal</span><span class="psv" id="psv-deb">—</span></div>
+  <div class="ps-l" id="psl-dem" style="display:none"><span class="psl">Demolition Cleanup</span><span class="psv" id="psv-dem">—</span></div>
+  <div class="ps-l" id="psl-grd" style="display:none"><span class="psl">Grading / Site Prep</span><span class="psv" id="psv-grd">—</span></div>
+  <div class="ps-l" id="psl-trn" style="display:none"><span class="psl">Trenching / Digging Arm</span><span class="psv" id="psv-trn">—</span></div>
+  <div class="ps-l" id="psl-sur" style="display:none"><span class="psl">Surcharges</span><span class="psv" id="psv-sur">—</span></div>
+  <div class="ps-l" id="psl-con" style="display:none"><span class="psl">Contingency Buffer</span><span class="psv" id="psv-con">—</span></div>
+  <div class="ps-tot">
+    <span class="pstl">Total</span>
+    <span class="pstv" id="psv-tot">$0</span>
+  </div>
+  <div class="ps-dep" id="psd" style="display:none">
+    <span>Deposit Due at Scheduling</span>
+    <span id="psv-dep" style="font-weight:700;color:#CC2222">—</span>
+  </div>
+  <div class="ps-sec">
+    <div class="ps-st">Payment &amp; Terms</div>
+    <div class="ps-sb" id="ps-terms">—</div>
+  </div>
+  <div class="ps-sec" id="ps-excl-sec" style="display:none">
+    <div class="ps-st">Exclusions &amp; Special Notes</div>
+    <div class="ps-sb" id="ps-excl">—</div>
+  </div>
+  <!-- WAIVER -->
+  <div class="waiver">
+    <strong>ESTIMATE DISCLAIMER &amp; LIABILITY WAIVER</strong><br>
+    This document is an <strong id="wv-status">ESTIMATE</strong> and is not a guaranteed or binding price. All figures are based on visible conditions and information provided at time of estimate. Actual charges may vary based on: (1) actual material weight at certified scale, (2) site conditions not visible or disclosed prior to work, including but not limited to buried rock, old fence wire, underground utilities, septic systems, irrigation lines, tree stumps, and subsurface debris, (3) scope changes discovered during work. CHEW — Central Texas Site Services is not liable for pre-existing property conditions, unmarked utilities, subsurface structures, or hazards not reasonably visible during a site assessment. Any change to scope will be presented via written change order before additional work proceeds. Customer is responsible for identifying and marking all underground utilities, septic system components, irrigation heads, and known hazards prior to start of work. By accepting this estimate, customer acknowledges these conditions.
+  </div>
+  <div class="ps-sec">
+    <div class="ps-st">Standard Terms</div>
+    <div class="ps-sb">Payment due per terms stated above. Late payments subject to 1.5% per month. Returned checks subject to $35 fee. CHEW reserves the right to stop work if payment is not received per agreed terms. All work performed in a professional and workmanlike manner. Customer responsible for obtaining any required permits unless otherwise agreed in writing.</div>
+  </div>
+  <div class="ps-sig">
+    <div><div class="ps-sl">Customer Signature &amp; Date</div></div>
+    <div><div class="ps-sl">CHEW Authorized Signature &amp; Date</div></div>
+  </div>
+</div>
+
+</div><!-- /lc -->
+
+<!-- RIGHT COLUMN -->
+<div class="rc no-print">
+  <div class="rt">Live Quote Summary</div>
+  <div class="sl"><span class="sll">Mobilization</span><span class="slv" id="r-mob">$0</span></div>
+  <div class="sl"><span class="sll">Land Clearing</span><span class="slv z" id="r-clr">—</span></div>
+  <div class="sl"><span class="sll">Gravel / Material</span><span class="slv z" id="r-grv">—</span></div>
+  <div class="sl"><span class="sll">Debris Removal</span><span class="slv z" id="r-deb">—</span></div>
+  <div class="sl"><span class="sll">Demolition</span><span class="slv z" id="r-dem">—</span></div>
+  <div class="sl"><span class="sll">Grading / Site Prep</span><span class="slv z" id="r-grd">—</span></div>
+  <div class="sl"><span class="sll">Trenching</span><span class="slv z" id="r-trn">—</span></div>
+  <div class="sl"><span class="sll">Surcharges</span><span class="slv z" id="r-sur">—</span></div>
+  <div class="sl"><span class="sll">Contingency</span><span class="slv z" id="r-con">—</span></div>
+  <div class="strow"><span class="stl">Total</span><span class="stv" id="r-tot">$0</span></div>
+  <div class="dep-row" id="r-dep-row" style="display:none">
+    <span class="dl">Deposit Due</span>
+    <span class="dv" id="r-dep-amt">—</span>
+  </div>
+  <div class="mw" id="r-min">⚠ Min $400 applied</div>
+
+  <!-- PROFIT -->
+  <div class="pb2">
+    <div class="pbt">🔒 Owner Profit — Hidden on Print</div>
+    <div class="pl"><span class="pll">Machine + overhead</span><span class="plv" id="p-mach">—</span></div>
+    <div class="pl"><span class="pll">Operator wage (you)</span><span class="plv" id="p-oper">—</span></div>
+    <div class="pl"><span class="pll">Disposal actual cost</span><span class="plv" id="p-disp">—</span></div>
+    <div class="pl"><span class="pll">Material actual cost</span><span class="plv" id="p-mat">—</span></div>
+    <div class="pl"><span class="pll">Trip charges cost</span><span class="plv" id="p-trip">—</span></div>
+    <div class="ptt"><span class="ptl">Est. Profit</span><span class="ptv" id="p-tot">—</span></div>
+  </div>
+
+  <!-- BUTTONS -->
+  <div style="margin-top:14px">
+    <button class="btn btn-r" onclick="window.print()">🖨 Print / Save PDF</button>
+    <button class="btn btn-y" onclick="emailQ()">✉ Email Quote</button>
+    <button class="btn btn-drive" onclick="saveToDrive()">💾 Save to Drive</button>
+    <div class="drive-status" id="drive-status"></div>
+    <button class="btn btn-o" onclick="resetF()">↺ New Quote</button>
+  </div>
+
+  <!-- QUICK REF -->
+  <div class="qref">
+    <div class="qrt">Rate Reference</div>
+    <div class="qrl">
+      Bucket: $150/hr · 2hr min<br>
+      Grapple: $155/hr · 2hr min<br>
+      Brush Hog: $160/hr · 2hr min<br>
+      Land Planer: $165/hr · 2hr min<br>
+      Digging Arm: $165/hr · 2hr min<br>
+      Jackhammer: $175/hr · 2hr min<br>
+      Minimum Job: $400<br>
+      Disposal: $98.75/ton<br>
+      Trip Charge: $65/load (default)<br>
+      Scale closes: 3:30 PM M–F
+    </div>
+  </div>
+</div>
+</div><!-- /main -->
+
+<script>
+// ── STATE ──
+const S={
+  mob:0,clr:0,grv:0,deb:0,dem:0,grd:0,trn:0,
+  clrOn:false,grvOn:false,debOn:false,demOn:false,grdOn:false,trnOn:false,
+  clrH:0,grvH:0,debH:0,demH:0,grdH:0,trnH:0,
+  debDisp:0,grvMat:0,tripCost:0,status:'ESTIMATE',selMat:'brush'
+};
+
+const $=id=>document.getElementById(id);
+const fv=id=>parseFloat($(id)?.value)||0;
+const sv=id=>$(id)?.value||'';
+const fmt=n=>'$'+Math.max(0,Math.round(n)).toLocaleString();
+const sr=(hid,val,el)=>{$(hid).value=val;el.closest('.rg').querySelectorAll('.rb').forEach(b=>b.classList.remove('on'));el.classList.add('on');};
+
+window.onload=()=>{
+  const d=new Date();
+  $('jd').value=d.toISOString().split('T')[0];
+  $('qn').value='CHEW-'+Date.now().toString().slice(-5);
+  selMat('brush');
+  sp(); calcDem(); calcGrd(); calcTot();
+};
+
+// ── PANEL TOGGLES ──
+function tog(id){
+  const b=$(id),ar=$(id+'-arr');
+  if(!b)return;
+  b.classList.toggle('open');
+  if(ar)ar.textContent=b.classList.contains('open')?'▲':'▼';
+}
+function togSvc(s){const b=$('b-'+s);if(b)b.classList.toggle('open');}
+function onOff(s){
+  const t=$('t-'+s),p=$('p-'+s),b=$('b-'+s);
+  const on=t.classList.contains('on');
+  t.classList.toggle('on',!on);
+  S[s+'On']=!on;
+  p.classList.toggle('off',on);
+  if(!on)b.classList.add('open');
+  recalc(s);
+}
+function recalc(s){
+  if(s==='clr')calcClr();
+  else if(s==='grv')calcGrv();
+  else if(s==='deb')calcDeb();
+  else if(s==='dem')calcDem();
+  else if(s==='grd')calcGrd();
+  else if(s==='trn')calcTrn();
+}
+
+// ── STATUS ──
+function setStatus(s,el){
+  S.status=s;
+  el.closest('.rg').querySelectorAll('.rb').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  const isEst=s==='ESTIMATE';
+  $('est-banner').style.display=isEst?'block':'none';
+  $('eb-title').textContent=isEst?'⚠ ESTIMATE — NOT A BINDING QUOTE':s==='QUOTE'?'✓ FORMAL QUOTE':'📄 INVOICE';
+  $('wv-status').textContent=s;
+  sp();
+}
+
+// ── SYNC PRINT ──
+function sp(){
+  $('ph-status').textContent=S.status;
+  $('ph-qnum').textContent=sv('qn');
+  $('ph-biz').textContent=sv('bp')||'(254) 000-0000';
+  $('ph-valid').textContent=sv('vf');
+  const d=new Date(sv('jd')+'T12:00:00');
+  $('ph-date').textContent=isNaN(d.getTime())?'—':d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  $('ph-cust').textContent=sv('cn')||'—';
+  $('ph-cphone').textContent=sv('cp')||'—';
+  $('ph-addr').textContent=sv('ja')||'—';
+  $('ph-notes').textContent=sv('jn')||'—';
+  const pc=$('pi-cust');
+  if(pc)pc.style.display=(sv('cn')||sv('ja'))?'grid':'none';
+}
+
+// ── MOB ──
+function calcMob(){
+  const d=fv('dist');
+  let f=0;
+  if(d>0&&d<=15)f=75;else if(d<=25)f=125;else if(d<=35)f=175;
+  else if(d<=45)f=225;else if(d<=55)f=250;else if(d>55)f=300;
+  S.mob=f;$('mob-d').textContent=fmt(f);calcTot();
+}
+
+// ── CLEARING ──
+const CLR_BASE={'1':350,'2':550,'3':900};
+const CLR_APH={'1':1.5,'2':0.9,'3':0.5};
+const CLR_RATE={brush:160,grapple:155,bucket:150};
+function calcClr(){
+  if(!S.clrOn){S.clr=0;S.clrH=0;updAmt('clr',0,false,'');calcTot();return;}
+  const ac=fv('clr-ac'),den=sv('clr-den'),ter=parseFloat(sv('clr-ter')),rck=parseFloat(sv('clr-rck')),att=sv('clr-att');
+  const rate=CLR_RATE[att],mx=ter*rck;
+  const hrs=Math.max(2,(ac/CLR_APH[den])*mx);
+  let sub=ac*CLR_BASE[den]*mx;
+  const minHit=sub>0&&sub<400;
+  if(minHit)sub=400;
+  S.clr=ac>0?sub:0;S.clrH=ac>0?hrs:0;
+  $('clr-br').textContent='$'+rate+'/hr';
+  $('clr-mx').textContent=mx.toFixed(2)+'×';
+  $('clr-er').textContent='$'+Math.round(rate*mx)+'/hr eff.';
+  $('clr-hr').textContent=ac>0?hrs.toFixed(1)+' hrs':'—';
+  $('clr-sub').textContent=ac>0?fmt(sub):'—';
+  $('clr-min').classList.toggle('show',minHit&&ac>0);
+  $('clr-haul').classList.toggle('show',sv('clr-deb')==='1'&&ac>0);
+  updAmt('clr',S.clr,S.clrOn,ac>0?ac+' ac':'');
+  calcTot();
+}
+
+// ── GRAVEL ──
+const GV_DEF_COST={flexbase:16,crushed:18,screenings:14,caliche:12,custom:0};
+const GV_MARKUP=2.5;
+function calcGrv(){
+  if(!S.grvOn){S.grv=0;S.grvH=0;S.grvMat=0;updAmt('grv',0,false,'');calcTot();return;}
+  const l=fv('gv-l'),w=fv('gv-w'),d=fv('gv-d'),mat=sv('gv-mat'),cond=parseFloat(sv('gv-cond'))||0;
+  const tripChg=fv('gv-trip')||65;
+  // Cost per ton — user override or default
+  const customCost=fv('gv-cost');
+  const costTon=customCost>0?customCost:(GV_DEF_COST[mat]||16);
+  const chargeTon=costTon*GV_MARKUP;
+  const tons=l*w*(d/12)*1.35/2000;
+  const loads=Math.max(1,Math.ceil(tons/5));
+  const matChg=tons*chargeTon;
+  const trips=loads*tripChg;
+  const spdH=Math.max(1,tons/10);
+  const spdChg=spdH*150+cond;
+  const sub=matChg+trips+spdChg;
+  const matCost=tons*costTon;
+  S.grv=l>0?sub:0;S.grvH=l>0?spdH:0;S.grvMat=l>0?matCost:0;
+  $('gv-tons').textContent=l>0?tons.toFixed(1)+' t':'—';
+  $('gv-loads').textContent=l>0?loads+(loads===1?' load':' loads'):'—';
+  $('gv-mc').textContent=l>0?fmt(matChg):'—';
+  $('gv-tc').textContent=l>0?fmt(trips):'—';
+  $('gv-sc').textContent=l>0?fmt(spdChg):'—';
+  $('gv-sub').textContent=l>0?fmt(sub):'—';
+  $('gv-matcost').textContent=l>0?fmt(matCost)+' @ $'+costTon.toFixed(2)+'/t (your cost)':'—';
+  updAmt('grv',S.grv,S.grvOn,l>0?tons.toFixed(1)+'t':'');
+  calcTot();
+}
+
+// ── DEBRIS ──
+const DEB_DATA={
+  brush:  {lo:10,hi:15, chg:165,maxF:1.0},
+  yard:   {lo:10,hi:20, chg:165,maxF:1.0},
+  household:{lo:20,hi:35,chg:215,maxF:1.0},
+  cd:     {lo:30,hi:50, chg:215,maxF:0.75},
+  stumps: {lo:40,hi:60, chg:180,maxF:0.75},
+  dirt:   {lo:75,hi:85, chg:165,maxF:0.75},
+  wetsoil:{lo:100,hi:120,chg:165,maxF:0.50},
+  gravel: {lo:90,hi:105,chg:165,maxF:0.50},
+  concrete:{lo:100,hi:150,chg:240,maxF:0.25}
+};
+const TRL_CF=196, DISP=98.75;
+
+function selMat(mat){
+  Object.keys(DEB_DATA).forEach(m=>{const c=$('mc-'+m);if(c)c.classList.remove('sel');});
+  const c=$('mc-'+mat);if(c)c.classList.add('sel');
+  $('deb-mat').value=mat;S.selMat=mat;
+  calcDeb();
+}
+
+function setFill(val,el){
+  $('deb-fill').value=val;
+  document.querySelectorAll('.fo').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+  const mat=sv('deb-mat')||'brush';
+  const maxF=DEB_DATA[mat]?.maxF||1.0;
+  const over=parseFloat(val)>maxF;
+  $('deb-fill-warn').classList.toggle('show',over);
+  calcDeb();
+}
+
+function calcDeb(){
+  if(!S.debOn){S.deb=0;S.debDisp=0;S.debH=0;updAmt('deb',0,false,'');calcTot();return;}
+  const mat=sv('deb-mat')||'brush';
+  const md=DEB_DATA[mat]||DEB_DATA.brush;
+  const fill=parseFloat(sv('deb-fill'))||0.5;
+  const loads=fv('deb-loads')||1;
+  const attRate=sv('deb-att')==='bucket'?150:155;
+  const mhrs=fv('deb-mhrs')||1;
+  const tripChg=fv('deb-trip')||65;
+  const cf=TRL_CF*fill;
+  const dens=(md.lo+md.hi)/2;
+  const tpl=cf*dens/2000;
+  const totTons=tpl*loads*1.15;
+  const dispCost=totTons*DISP;
+  const dispChg=totTons*md.chg;
+  const machChg=mhrs*attRate;
+  const allTrips=loads*tripChg;
+  const sub=dispChg+machChg+allTrips;
+  const heavy=tpl*2000>11000;
+  $('deb-heavy').classList.toggle('show',heavy);
+  S.deb=sub;S.debDisp=dispCost;S.debH=mhrs;
+  S.tripCost=(S.tripCost||0);// will accumulate in calcTot
+  $('deb-dens').textContent=md.lo+'–'+md.hi+' lbs/cf';
+  $('deb-tpl').textContent=tpl.toFixed(2)+' t';
+  $('deb-tot').textContent=totTons.toFixed(2)+' t';
+  $('deb-disp').textContent=fmt(dispChg);
+  $('deb-mach').textContent=fmt(machChg);
+  $('deb-tripc').textContent=fmt(allTrips);
+  $('deb-actual').textContent=fmt(dispCost)+' (your cost @ $'+DISP+'/t)';
+  $('deb-sub').textContent=fmt(sub);
+  updAmt('deb',S.deb,S.debOn,loads+' load'+(loads>1?'s':''));
+  calcTot();
+}
+
+// ── DEMO ──
+const DEM_HAUL={concrete:750,asphalt:700,structure:500,mixed:600};
+function calcDem(){
+  if(!S.demOn){S.dem=0;S.demH=0;updAmt('dem',0,false,'');calcTot();return;}
+  const bh=fv('dem-bh'),lh=fv('dem-lh'),lo=fv('dem-lo'),trip=fv('dem-trip')||65,mat=sv('dem-mat');
+  const bl=bh*175,ll=lh*155,haul=lo*DEM_HAUL[mat]+lo*trip;
+  const sub=bl+ll+haul;
+  S.dem=sub;S.demH=bh+lh;
+  $('dem-bl').textContent=fmt(bl);
+  $('dem-ll').textContent=fmt(ll);
+  $('dem-hl').textContent=fmt(haul);
+  $('dem-sub').textContent=fmt(sub);
+  updAmt('dem',S.dem,S.demOn,'');calcTot();
+}
+
+// ── GRADING ──
+function calcGrd(){
+  if(!S.grdOn){S.grd=0;S.grdH=0;updAmt('grd',0,false,'');calcTot();return;}
+  const h=Math.max(2,fv('grd-h')),rate=parseFloat(sv('grd-att'))||150,cx=parseFloat(sv('grd-cx'))||1.0;
+  const eff=Math.round(rate*cx);const sub=h*rate*cx;
+  S.grd=sub;S.grdH=h;
+  $('grd-br').textContent='$'+rate+'/hr';
+  $('grd-er').textContent='$'+eff+'/hr eff.';
+  $('grd-sub').textContent=fmt(sub);
+  updAmt('grd',S.grd,S.grdOn,h+' hrs');calcTot();
+}
+
+// ── TRENCHING ──
+function calcTrn(){
+  if(!S.trnOn){S.trn=0;S.trnH=0;updAmt('trn',0,false,'');calcTot();return;}
+  const l=fv('trn-l'),dep=parseFloat(sv('trn-dep'))||1.0,soil=parseFloat(sv('trn-soil'))||1.0;
+  const h=Math.max(2,(l/80)*dep*soil);const sub=l>0?h*165:0;
+  S.trn=sub;S.trnH=l>0?h:0;
+  $('trn-hr').textContent=l>0?h.toFixed(1)+' hrs':'—';
+  $('trn-sub').textContent=l>0?fmt(sub):'—';
+  updAmt('trn',S.trn,S.trnOn,l>0?h.toFixed(1)+' hrs':'');calcTot();
+}
+
+// ── TOTAL ──
+function calcTot(){
+  const sur=parseFloat(sv('sur'))||0,rush=parseFloat(sv('rush'))||0,misc=fv('misc');
+  const cont=parseFloat(sv('cont'))/100,dep=parseFloat(sv('dep'))/100;
+  const surTotal=sur+rush+misc;
+  const base=S.mob+S.clr+S.grv+S.deb+S.dem+S.grd+S.trn+surTotal;
+  const contAmt=base*cont;
+  let total=base+contAmt;
+  const minHit=total>0&&total<400;
+  if(minHit)total=400;
+  const depAmt=dep>0?Math.round(total*dep):0;
+  $('r-min').classList.toggle('show',minHit);
+  // Scale reconciliation
+  const scaleW=fv('scale-actual');
+  if(scaleW>0){
+    const mat=sv('deb-mat')||'brush';
+    const adjDisp=scaleW*((DEB_DATA[mat]?.chg)||165);
+    $('scale-adj').textContent=fmt(adjDisp)+' (based on '+scaleW+'t actual)';
+  } else $('scale-adj').textContent='—';
+  // Right col
+  $('r-mob').textContent=fmt(S.mob);
+  setRV('r-clr',S.clr,S.clrOn);setRV('r-grv',S.grv,S.grvOn);
+  setRV('r-deb',S.deb,S.debOn);setRV('r-dem',S.dem,S.demOn);
+  setRV('r-grd',S.grd,S.grdOn);setRV('r-trn',S.trn,S.trnOn);
+  if(surTotal>0){$('r-sur').textContent=fmt(surTotal);$('r-sur').classList.remove('z');}
+  else{$('r-sur').textContent='—';$('r-sur').classList.add('z');}
+  if(contAmt>0){$('r-con').textContent=fmt(contAmt);$('r-con').classList.remove('z');}
+  else{$('r-con').textContent='—';$('r-con').classList.add('z');}
+  $('r-tot').textContent=fmt(total);
+  $('live-total').textContent=fmt(total);
+  $('dep-amt').textContent=depAmt>0?fmt(depAmt):'$0';
+  $('r-dep-amt').textContent=depAmt>0?fmt(depAmt):'—';
+  $('r-dep-row').style.display=depAmt>0?'flex':'none';
+  // Profit
+  const totH=S.clrH+S.grvH+S.debH+S.demH+S.grdH+S.trnH;
+  const tripTotal=(fv('deb-trip')||65)*(fv('deb-loads')||1)*(S.debOn?1:0)
+                +(fv('gv-trip')||65)*Math.max(1,Math.ceil(fv('gv-tons')||1/5))*(S.grvOn?1:0)
+                +(fv('dem-trip')||65)*(fv('dem-lo')||1)*(S.demOn?1:0);
+  const mach=totH*44,oper=totH*35,profit=total-mach-oper-S.debDisp-S.grvMat-S.mob-tripTotal;
+  $('p-mach').textContent=fmt(mach);$('p-oper').textContent=fmt(oper);
+  $('p-disp').textContent=fmt(S.debDisp);$('p-mat').textContent=fmt(S.grvMat);
+  $('p-trip').textContent=fmt(tripTotal);
+  $('p-tot').textContent=fmt(profit)+(totH>0?' ('+fmt(profit/totH)+'/hr)':'');
+  // Print summary
+  updPS(total,contAmt,surTotal,depAmt);
+}
+
+function setRV(id,val,on){
+  const el=$(id);
+  if(on&&val>0){el.textContent=fmt(val);el.classList.remove('z');}
+  else{el.textContent='—';el.classList.add('z');}
+}
+
+function updAmt(s,val,on,sub){
+  const el=$('a-'+s);
+  if(on&&val>0){el.textContent=fmt(val);el.classList.remove('z');}
+  else{el.textContent='—';el.classList.add('z');}
+  $('s-'+s).textContent=sub?' · '+sub:'';
+}
+
+function updPS(total,cont,sur,dep){
+  $('psv-mob').textContent=fmt(S.mob);
+  setPSL('psl-clr','psv-clr',S.clr,S.clrOn);
+  setPSL('psl-grv','psv-grv',S.grv,S.grvOn);
+  setPSL('psl-deb','psv-deb',S.deb,S.debOn);
+  setPSL('psl-dem','psv-dem',S.dem,S.demOn);
+  setPSL('psl-grd','psv-grd',S.grd,S.grdOn);
+  setPSL('psl-trn','psv-trn',S.trn,S.trnOn);
+  if(sur>0){$('psl-sur').style.display='flex';$('psv-sur').textContent=fmt(sur);}
+  else $('psl-sur').style.display='none';
+  if(cont>0){$('psl-con').style.display='flex';$('psv-con').textContent=fmt(cont);}
+  else $('psl-con').style.display='none';
+  $('psv-tot').textContent=fmt(total);
+  if(dep>0){$('psd').style.display='flex';$('psv-dep').textContent=fmt(dep);}
+  else $('psd').style.display='none';
+  $('ps-terms').textContent='Payment: '+sv('pterm')+' · Valid: '+sv('vf')+(dep>0?' · Deposit: '+fmt(dep):'');
+  const excl=sv('excl');
+  $('ps-excl-sec').style.display=excl?'block':'none';
+  $('ps-excl').textContent=excl;
+}
+function setPSL(row,val,amt,on){
+  $(row).style.display=(on&&amt>0)?'flex':'none';
+  $(val).textContent=fmt(amt);
+}
+
+// ── EMAIL ──
+function emailQ(){
+  const em=sv('ce');
+  const cust=sv('cn')||'Customer';
+  const addr=sv('ja')||'Job Site';
+  const qnum=sv('qn');
+  const biz=sv('bp')||'(254) 000-0000';
+  const lines=[];
+  if(S.mob>0)lines.push('Mobilization: '+fmt(S.mob));
+  if(S.clrOn&&S.clr>0)lines.push('Land Clearing / Brush Hogging: '+fmt(S.clr));
+  if(S.grvOn&&S.grv>0)lines.push('Gravel / Material Spreading: '+fmt(S.grv));
+  if(S.debOn&&S.deb>0)lines.push('Debris & Waste Removal: '+fmt(S.deb));
+  if(S.demOn&&S.dem>0)lines.push('Demolition Cleanup: '+fmt(S.dem));
+  if(S.grdOn&&S.grd>0)lines.push('Grading / Site Prep: '+fmt(S.grd));
+  if(S.trnOn&&S.trn>0)lines.push('Trenching / Digging Arm: '+fmt(S.trn));
+  const sur=(parseFloat(sv('sur'))||0)+(parseFloat(sv('rush'))||0)+fv('misc');
+  if(sur>0)lines.push('Surcharges: '+fmt(sur));
+  const cont=parseFloat(sv('cont'))/100;
+  const base=S.mob+S.clr+S.grv+S.deb+S.dem+S.grd+S.trn+sur;
+  const contAmt=base*cont;
+  if(contAmt>0)lines.push('Contingency ('+sv('cont')+'%): '+fmt(contAmt));
+  const total=Math.max(400,base+contAmt);
+  const dep=parseFloat(sv('dep'))/100;
+  const depAmt=dep>0?Math.round(total*dep):0;
+  lines.push(''); lines.push('TOTAL: '+fmt(total));
+  if(depAmt>0)lines.push('DEPOSIT DUE AT SCHEDULING: '+fmt(depAmt));
+
+  const body=
+`${sv('qn')} — CHEW CENTRAL TEXAS SITE SERVICES
+${'='.repeat(50)}
+
+Hi ${cust},
+
+Thank you for the opportunity. Please find your ${S.status} below.
+
+DOCUMENT: ${S.status}
+QUOTE #: ${qnum}
+DATE: ${sv('jd')}
+VALID FOR: ${sv('vf')}
+JOB SITE: ${addr}
+
+SCOPE OF WORK:
+${sv('jn')||'As discussed on site / by phone'}
+
+PRICING BREAKDOWN:
+${lines.join('\n')}
+
+PAYMENT TERMS: ${sv('pterm')}
+${sv('excl')?'\nEXCLUSIONS & NOTES:\n'+sv('excl'):''}
+
+${'─'.repeat(50)}
+ESTIMATE DISCLAIMER & LIABILITY WAIVER
+${'─'.repeat(50)}
+This document is a ${S.status} and is NOT a guaranteed or binding price. All figures are based on visible conditions and information provided at time of estimate.
+
+ACTUAL CHARGES MAY VARY based on:
+• Actual material weight at certified scale (disposal billed at scale ticket weight)
+• Site conditions not visible or disclosed prior to work, including but not limited to: buried rock, old fence wire, underground utilities, septic systems, irrigation lines, tree stumps, and subsurface debris
+• Scope changes discovered during work
+
+HIDDEN CONDITIONS: Tall brush, overgrown areas, and undisturbed land may conceal hazards including but not limited to buried fencing, wire, stumps, concrete, rock outcrops, and unmarked utilities. These conditions cannot always be identified before work begins and may affect final pricing.
+
+CUSTOMER RESPONSIBILITIES: Customer is responsible for identifying and marking all underground utilities, septic system components, irrigation heads, wells, and known hazards PRIOR to start of work. Call 811 before any digging is required.
+
+LIABILITY LIMITATION: CHEW — Central Texas Site Services is not liable for pre-existing property conditions, unmarked utilities, subsurface structures, or hazards not reasonably visible during a site assessment. Any change to scope will be presented via written change order before additional work proceeds.
+
+By accepting this estimate, customer acknowledges these conditions.
+${'─'.repeat(50)}
+
+To accept this estimate, please reply to this email, call, or text us.
+We require a signed copy and ${depAmt>0?'deposit of '+fmt(depAmt):' no deposit'} to schedule.
+
+CHEW — Clearing · Hauling · Earthwork · Waste Removal
+Copperas Cove, TX 76522
+${biz}`;
+
+  const subj=`CHEW ${S.status} ${qnum} — ${addr}`;
+  window.location.href=`mailto:${em}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
+}
+
+// ── DISTANCE CALCULATION — No API key needed ──
+// Uses OpenStreetMap Nominatim for geocoding (free, no key required)
+// Uses Haversine formula for distance calculation
+const BASE_LAT = 31.0018; // 1125 Lindorbet Rd, Copperas Cove TX
+const BASE_LNG = -97.9130;
+
+function saveApiKey() {} // kept for compatibility
+function loadSavedKey() {
+  // Auto-show the address field as ready
+  setApiStatus('on', 'Address lookup ready — type an address and click GET DIST');
+  $('addr-hint').textContent = 'Type full address and click GET DIST to auto-calculate distance';
+}
+function initMaps() {
+  setApiStatus('on', 'Address lookup ready — type an address and click GET DIST');
+  $('addr-hint').textContent = 'Type full address and click GET DIST';
+}
+
+// Haversine formula — calculates straight-line distance between two lat/lng points
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 3958.8; // Earth radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+// Estimate drive time (straight-line × 1.35 for road factor, avg 45mph rural TX)
+function estDriveTime(miles) {
+  const driveMiles = miles * 1.35;
+  const mins = Math.round(driveMiles / 45 * 60);
+  if (mins < 60) return mins + ' min (est.)';
+  const hrs = Math.floor(mins/60);
+  const rem = mins % 60;
+  return hrs + 'h ' + (rem > 0 ? rem + 'm' : '') + ' (est.)';
+}
+
+async function lookupDistance() {
+  const addr = $('ja').value.trim();
+  if (!addr) { alert('Enter a job site address first'); return; }
+  setAddrStatus('⟳ Looking up address...');
+
+  try {
+    // Use Nominatim OpenStreetMap geocoder — free, no key needed
+    const query = encodeURIComponent(addr + ', Texas, USA');
+    const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&countrycodes=us`;
+    const resp = await fetch(url, {
+      headers: { 'Accept-Language': 'en', 'User-Agent': 'CHEW-Estimator/1.0' }
+    });
+    const data = await resp.json();
+
+    if (!data || data.length === 0) {
+      setAddrStatus('⚠ Address not found — try adding city and state (e.g. 1000 Main St, Gatesville TX)');
+      return;
+    }
+
+    const result = data[0];
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    const displayName = result.display_name;
+
+    // Calculate straight-line distance
+    const miles = haversine(BASE_LAT, BASE_LNG, lat, lng);
+    // Add 20% for road routing estimate
+    const roadMiles = Math.round(miles * 1.2);
+    const driveTime = estDriveTime(miles);
+
+    // Update fields
+    $('dist').value = roadMiles;
+    $('drive-time').textContent = driveTime + ' from base';
+    setAddrStatus('✓ ' + roadMiles + ' mi (est.) · ' + driveTime);
+
+    // Update address field with full address
+    $('ja').value = displayName.split(',').slice(0,4).join(',');
+    sp();
+
+    // Check 60-mile radius
+    $('dist-warn').style.display = roadMiles > 60 ? 'block' : 'none';
+    calcMob();
+
+  } catch(err) {
+    setAddrStatus('⚠ Lookup failed — check internet connection or enter miles manually');
+  }
+}
+
+// Allow Enter key to trigger lookup
+window.addEventListener('load', () => {
+  loadSavedKey();
+  const jaField = $('ja');
+  if (jaField) {
+    jaField.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); lookupDistance(); }
+    });
+  }
+});
+
+function setApiStatus(type, msg) {
+  const dot = $('api-dot');
+  $('api-msg').textContent = msg;
+  if (type === 'on') { dot.className = 'dot-on'; dot.textContent = '●'; }
+  else if (type === 'error') { dot.className = 'dot-err'; dot.textContent = '●'; }
+  else { dot.className = 'dot-off'; dot.textContent = '◌'; }
+}
+
+function setAddrStatus(msg) {
+  const el = $('addr-status');
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+// ── GOOGLE DRIVE SAVE ──
+let driveToken = null;
+let driveFolderId = null;
+
+function saveToDrive() {
+  const clientId = localStorage.getItem('chew_drive_client');
+  if (!clientId) {
+    const id = prompt(
+      'GOOGLE DRIVE SETUP — One-time only\n\n' +
+      'Steps:\n' +
+      '1. Go to console.cloud.google.com → CHEW Estimator project\n' +
+      '2. APIs & Services → Library → Enable "Google Drive API"\n' +
+      '3. APIs & Services → Credentials → Create Credentials\n' +
+      '4. Choose: OAuth 2.0 Client ID\n' +
+      '5. Application type: Web application\n' +
+      '6. Name: CHEW Drive\n' +
+      '7. Authorized JavaScript origins: https://billymalady-boop.github.io\n' +
+      '8. Click Create → Copy the Client ID\n\n' +
+      'Paste your OAuth Client ID here:'
+    );
+    if (!id || !id.trim()) return;
+    localStorage.setItem('chew_drive_client', id.trim());
+    saveToDrive();
+    return;
+  }
+  setDriveStatus('⟳ Connecting to Google Drive...');
+  if (!window.google?.accounts?.oauth2) {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.onload = () => authAndSave(clientId);
+    script.onerror = () => setDriveStatus('⚠ Could not load Google auth');
+    document.head.appendChild(script);
+  } else {
+    authAndSave(clientId);
+  }
+}
+
+function authAndSave(clientId) {
+  if (driveToken) { doSaveToDrive(); return; }
+  const tc = google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: 'https://www.googleapis.com/auth/drive.file',
+    callback: (r) => {
+      if (r.error) { setDriveStatus('⚠ Auth failed: ' + r.error); return; }
+      driveToken = r.access_token;
+      doSaveToDrive();
+    }
+  });
+  tc.requestAccessToken();
+}
+
+async function doSaveToDrive() {
+  try {
+    setDriveStatus('⟳ Saving to CHEW folder...');
+    if (!driveFolderId) driveFolderId = await findOrCreateFolder('CHEW');
+    const qnum = sv('qn') || 'CHEW-' + Date.now().toString().slice(-5);
+    const cust = sv('cn') || 'Unknown';
+    const date = sv('jd') || new Date().toISOString().split('T')[0];
+    const filename = `${qnum} — ${cust} — ${date}.html`;
+    const total = $('r-tot').textContent;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${qnum}</title>
+<style>body{font-family:Arial,sans-serif;max-width:800px;margin:20px auto;padding:20px;}
+h1{color:#CC2222;}h2{border-bottom:2px solid #CC2222;padding-bottom:6px;}
+table{width:100%;border-collapse:collapse;margin:10px 0;}
+td,th{padding:8px 12px;border:1px solid #ddd;text-align:left;}th{background:#f5f5f5;}
+.tot{font-size:22px;font-weight:bold;color:#CC2222;margin:16px 0;}
+.disc{background:#fff8e0;border:1px solid #cc9933;padding:12px;margin:12px 0;font-size:11px;}</style>
+</head><body>
+<h1>CHEW — Central Texas Site Services</h1>
+<p>1125 Lindorbet Rd · Copperas Cove, TX 76522</p>
+<h2>${qnum} · ${S.status} · ${date}</h2>
+<table>
+<tr><th>Customer</th><td>${sv('cn')}</td><th>Phone</th><td>${sv('cp')}</td></tr>
+<tr><th>Email</th><td>${sv('ce')}</td><th>Distance</th><td>${sv('dist')} miles</td></tr>
+<tr><th>Job Site</th><td colspan="3">${sv('ja')}</td></tr>
+<tr><th>Description</th><td colspan="3">${sv('jn')}</td></tr>
+</table>
+<h2>Pricing Breakdown</h2>
+<table>
+<tr><th>Service</th><th>Amount</th></tr>
+<tr><td>Mobilization</td><td>$${S.mob.toLocaleString()}</td></tr>
+${S.clrOn&&S.clr>0?`<tr><td>Land Clearing / Brush Hogging</td><td>$${S.clr.toLocaleString()}</td></tr>`:''}
+${S.grvOn&&S.grv>0?`<tr><td>Gravel / Material Spreading</td><td>$${S.grv.toLocaleString()}</td></tr>`:''}
+${S.debOn&&S.deb>0?`<tr><td>Debris & Waste Removal</td><td>$${S.deb.toLocaleString()}</td></tr>`:''}
+${S.demOn&&S.dem>0?`<tr><td>Demolition Cleanup</td><td>$${S.dem.toLocaleString()}</td></tr>`:''}
+${S.grdOn&&S.grd>0?`<tr><td>Grading / Site Prep</td><td>$${S.grd.toLocaleString()}</td></tr>`:''}
+${S.trnOn&&S.trn>0?`<tr><td>Trenching / Digging Arm</td><td>$${S.trn.toLocaleString()}</td></tr>`:''}
+</table>
+<div class="tot">TOTAL: ${total}</div>
+<p><strong>Payment:</strong> ${sv('pterm')} &nbsp;·&nbsp; <strong>Valid:</strong> ${sv('vf')}</p>
+${sv('excl')?`<p><strong>Exclusions/Notes:</strong> ${sv('excl')}</p>`:''}
+<div class="disc"><strong>ESTIMATE DISCLAIMER:</strong> This is an estimate based on visible conditions at time of assessment. Final charges subject to actual site conditions, material weight at certified scale, and scope changes discovered during work. Hidden conditions including buried rock, fence wire, underground utilities, septic systems, and stumps may affect final pricing. Customer responsible for marking all utilities before work begins.</div>
+<p style="margin-top:20px;color:#666;font-size:11px;">Generated by CHEW Estimator · ${new Date().toLocaleString()}</p>
+</body></html>`;
+    const meta = { name: filename, mimeType: 'text/html', parents: [driveFolderId] };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(meta)], {type:'application/json'}));
+    form.append('file', new Blob([html], {type:'text/html'}));
+    const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method:'POST', headers:{Authorization:'Bearer '+driveToken}, body:form
+    });
+    if (!resp.ok) {
+      const err = await resp.json();
+      if (err.error?.status==='UNAUTHENTICATED'||err.error?.code===401) {
+        driveToken = null;
+        setDriveStatus('⚠ Session expired — click Save to Drive again');
+      } else {
+        setDriveStatus('⚠ Save failed: '+(err.error?.message||resp.status));
+      }
+      return;
+    }
+    setDriveStatus('✅ Saved: ' + filename);
+    setTimeout(()=>setDriveStatus(''), 6000);
+  } catch(e) {
+    setDriveStatus('⚠ Error: ' + e.message);
+  }
+}
+
+async function findOrCreateFolder(name) {
+  const s = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id)`,
+    {headers:{Authorization:'Bearer '+driveToken}}
+  );
+  const d = await s.json();
+  if (d.files?.length) return d.files[0].id;
+  const c = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method:'POST',
+    headers:{Authorization:'Bearer '+driveToken,'Content-Type':'application/json'},
+    body:JSON.stringify({name, mimeType:'application/vnd.google-apps.folder'})
+  });
+  const f = await c.json();
+  return f.id;
+}
+
+function setDriveStatus(msg) {
+  const el = $('drive-status');
+  el.textContent = msg;
+  el.classList.toggle('show', !!msg);
+}
+
+function resetF(){
+  if(!confirm('Clear all data and start a new quote?'))return;
+  ['clr','grv','deb','dem','grd','trn'].forEach(s=>{
+    S[s]=0;S[s+'On']=false;S[s+'H']=0;
+    $('t-'+s).classList.remove('on');
+    $('p-'+s).classList.remove('off');
+    $('b-'+s).classList.remove('open');
+    updAmt(s,0,false,'');
+  });
+  S.mob=0;S.debDisp=0;S.grvMat=0;S.tripCost=0;
+  ['cn','cp','ce','ja','jn','bp','excl','scale-actual'].forEach(id=>{$(id).value='';});
+  $('dist').value='';$('mob-d').textContent='$0';
+  $('qn').value='CHEW-'+Date.now().toString().slice(-5);
+  $('jd').value=new Date().toISOString().split('T')[0];
+  selMat('brush');sp();calcTot();
+}
+</script>
+</body>
+</html>
