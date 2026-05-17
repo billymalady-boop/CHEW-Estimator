@@ -939,9 +939,36 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
         <select id="pterm">
           <option>Due on completion</option>
           <option>Net 7</option><option>Net 15</option><option>Net 30</option>
+          <option>Cash at completion</option>
+          <option>Cash App at completion</option>
+          <option>Venmo at completion</option>
         </select>
       </div>
       <div><div class="cl">Deposit Amount</div><div class="cv sm" id="dep-amt">$0</div></div>
+    </div>
+
+    <!-- CASH DISCOUNT -->
+    <div class="f">
+      <label>Cash / Instant Pay Discount <span style="color:var(--muted);font-size:10px;font-weight:400;">— applied to total, shown on quote</span></label>
+      <div class="rg">
+        <div class="rb on" onclick="sr('cash-disc','0',this);calcTot()">None</div>
+        <div class="rb" onclick="sr('cash-disc','5',this);calcTot()">5% Off</div>
+        <div class="rb" onclick="sr('cash-disc','10',this);calcTot()">10% Off</div>
+        <div class="rb" onclick="sr('cash-disc','15',this);calcTot()">15% Off</div>
+      </div>
+      <input type="hidden" id="cash-disc" value="0">
+      <div class="hint">Applies when customer pays cash, Cash App, or Venmo at job completion — shown as a line item discount on the quote</div>
+    </div>
+
+    <!-- PAYMENT METHODS -->
+    <div class="f"><label>Accepted Payment Methods <span style="color:var(--muted);font-size:10px;font-weight:400;">— shown on quote and email</span></label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
+        <label style="display:flex;align-items:center;gap:6px;color:#ccc;font-size:12px;cursor:pointer;"><input type="checkbox" id="pay-cash" checked onchange="calcTot()"> 💵 Cash</label>
+        <label style="display:flex;align-items:center;gap:6px;color:#ccc;font-size:12px;cursor:pointer;"><input type="checkbox" id="pay-cashapp" checked onchange="calcTot()"> 📱 Cash App</label>
+        <label style="display:flex;align-items:center;gap:6px;color:#ccc;font-size:12px;cursor:pointer;"><input type="checkbox" id="pay-venmo" checked onchange="calcTot()"> 💙 Venmo</label>
+        <label style="display:flex;align-items:center;gap:6px;color:#ccc;font-size:12px;cursor:pointer;"><input type="checkbox" id="pay-check" onchange="calcTot()"> 🏦 Check</label>
+        <label style="display:flex;align-items:center;gap:6px;color:#ccc;font-size:12px;cursor:pointer;"><input type="checkbox" id="pay-card" onchange="calcTot()"> 💳 Card (+3%)</label>
+      </div>
     </div>
     <div class="f"><label>Show Hours &amp; Rates on Quote / Email</label>
       <div class="rg">
@@ -989,6 +1016,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
   <div class="ps-sec">
     <div class="ps-st">Payment &amp; Terms</div>
     <div class="ps-sb" id="ps-terms">—</div>
+    <div class="ps-sb" id="ps-pay-methods" style="margin-top:4px;"></div>
   </div>
   <div class="ps-sec" id="ps-excl-sec" style="display:none">
     <div class="ps-st">Exclusions &amp; Special Notes</div>
@@ -1023,7 +1051,9 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
   <div class="sl"><span class="sll">Trenching</span><span class="slv z" id="r-trn">—</span></div>
   <div class="sl"><span class="sll">Surcharges</span><span class="slv z" id="r-sur">—</span></div>
   <div class="sl"><span class="sll">Contingency</span><span class="slv z" id="r-con">—</span></div>
+  <div class="sl" id="r-cashdisc-row"><span class="sll" style="color:#2ecc71;">Cash Discount</span><span class="slv z" id="r-cash-disc">—</span></div>
   <div class="strow"><span class="stl">Total</span><span class="stv" id="r-tot">$0</span></div>
+  <div style="padding:6px 0;border-top:1px solid #222;margin-top:2px;font-size:10px;color:#666;line-height:1.6;" id="r-pay-methods">—</div>
   <div class="dep-row" id="r-dep-row" style="display:none">
     <span class="dl">Deposit Due</span>
     <span class="dv" id="r-dep-amt">—</span>
@@ -1320,13 +1350,19 @@ function calcTrn(){
 function calcTot(){
   const sur=parseFloat(sv('sur'))||0,rush=parseFloat(sv('rush'))||0,misc=fv('misc');
   const cont=parseFloat(sv('cont'))/100,dep=parseFloat(sv('dep'))/100;
+  const cashDiscPct=parseFloat(sv('cash-disc'))/100||0;
   const surTotal=sur+rush+misc;
   const base=S.mob+S.clr+S.grv+S.deb+S.dem+S.grd+S.trn+surTotal;
   const contAmt=base*cont;
   let total=base+contAmt;
   const minHit=total>0&&total<400;
   if(minHit)total=400;
+  const cashDiscAmt=cashDiscPct>0?Math.round(total*cashDiscPct):0;
+  total=total-cashDiscAmt;
   const depAmt=dep>0?Math.round(total*dep):0;
+  // Update cash discount display
+  const cdEl=$('r-cash-disc');
+  if(cdEl){if(cashDiscAmt>0){cdEl.textContent='-'+fmt(cashDiscAmt)+' ('+sv('cash-disc')+'% cash)';cdEl.classList.remove('z');}else{cdEl.textContent='—';cdEl.classList.add('z');}}
   $('r-min').classList.toggle('show',minHit);
   // Scale reconciliation
   const scaleW=fv('scale-actual');
@@ -1345,6 +1381,15 @@ function calcTot(){
   if(contAmt>0){$('r-con').textContent=fmt(contAmt);$('r-con').classList.remove('z');}
   else{$('r-con').textContent='—';$('r-con').classList.add('z');}
   $('r-tot').textContent=fmt(total);
+  // Payment methods line
+  const methods=[];
+  if($('pay-cash')?.checked) methods.push('💵 Cash');
+  if($('pay-cashapp')?.checked) methods.push('📱 Cash App');
+  if($('pay-venmo')?.checked) methods.push('💙 Venmo');
+  if($('pay-check')?.checked) methods.push('🏦 Check');
+  if($('pay-card')?.checked) methods.push('💳 Card (+3%)');
+  const pmEl=$('r-pay-methods');
+  if(pmEl) pmEl.textContent=methods.length?methods.join(' · '):'—';
   $('live-total').textContent=fmt(total);
   $('dep-amt').textContent=depAmt>0?fmt(depAmt):'$0';
   $('r-dep-amt').textContent=depAmt>0?fmt(depAmt):'—';
@@ -1391,7 +1436,16 @@ function updPS(total,cont,sur,dep){
   $('psv-tot').textContent=fmt(total);
   if(dep>0){$('psd').style.display='flex';$('psv-dep').textContent=fmt(dep);}
   else $('psd').style.display='none';
-  $('ps-terms').textContent='Payment: '+sv('pterm')+' · Valid: '+sv('vf')+(dep>0?' · Deposit: '+fmt(dep):'');
+  const pmethods=[];
+  if($('pay-cash')?.checked) pmethods.push('Cash');
+  if($('pay-cashapp')?.checked) pmethods.push('Cash App');
+  if($('pay-venmo')?.checked) pmethods.push('Venmo');
+  if($('pay-check')?.checked) pmethods.push('Check');
+  if($('pay-card')?.checked) pmethods.push('Card (+3%)');
+  const cashDiscPctPS=parseFloat(sv('cash-disc'))||0;
+  $('ps-terms').textContent='Payment: '+sv('pterm')+' · Valid: '+sv('vf')+(dep>0?' · Deposit: '+fmt(dep):'')+(cashDiscPctPS>0?' · '+cashDiscPctPS+'% cash/instant pay discount applied':'');
+  const psPayEl=$('ps-pay-methods');
+  if(psPayEl) psPayEl.textContent=pmethods.length?'Accepted: '+pmethods.join(' · '):'';
   const excl=sv('excl');
   $('ps-excl-sec').style.display=excl?'block':'none';
   $('ps-excl').textContent=excl;
@@ -1427,13 +1481,27 @@ function buildLineRows() {
   const base=S.mob+S.clr+S.grv+S.deb+S.dem+S.grd+S.trn+sur;
   const contAmt=base*cont;
   // Contingency rolled into total — not shown as line item on email
-  return { rows, total: Math.max(400, base+contAmt), dep: parseFloat(sv('dep'))/100, base, contAmt };
+  const cashDiscPct = parseFloat(sv('cash-disc'))/100||0;
+  let total = Math.max(400, base+contAmt);
+  const cashDiscAmt = cashDiscPct>0 ? Math.round(total*cashDiscPct) : 0;
+  total = total - cashDiscAmt;
+  // Payment methods
+  const methods=[];
+  if($('pay-cash')?.checked) methods.push('💵 Cash');
+  if($('pay-cashapp')?.checked) methods.push('📱 Cash App ($CHEWTexas)');
+  if($('pay-venmo')?.checked) methods.push('💙 Venmo (@CHEWTexas)');
+  if($('pay-check')?.checked) methods.push('🏦 Check');
+  if($('pay-card')?.checked) methods.push('💳 Card (+3% processing fee)');
+  const payMethods = methods.join('  ·  ');
+  // Cash discount row
+  if(cashDiscAmt>0) rows.push(`<tr style="background:#0a1f0a;"><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#2ecc71;font-size:14px;">Cash / Instant Pay Discount (${sv('cash-disc')}%)</td><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;text-align:right;font-weight:700;color:#2ecc71;font-size:14px;">-${fmt(cashDiscAmt)}</td></tr>`);
+  return { rows, total, dep: parseFloat(sv('dep'))/100, base, contAmt, cashDiscAmt, payMethods };
 }
 
 function buildHtmlEmail() {
   const em=sv('ce'), cust=sv('cn')||'Customer', addr=sv('ja')||'Job Site';
   const qnum=sv('qn'), biz=sv('bp')||'901-258-9942';
-  const { rows, total, dep } = buildLineRows();
+  const { rows, total, dep, cashDiscAmt, payMethods } = buildLineRows();
   const depAmt = dep>0 ? Math.round(total*dep) : 0;
   const statusColor = S.status==='ESTIMATE' ? '#cc8800' : S.status==='QUOTE' ? '#1a8a1a' : '#1a5ca8';
   const excl = sv('excl');
@@ -1516,6 +1584,7 @@ function buildHtmlEmail() {
       </tr>
       ${depAmt>0?`<tr style="background:#111;"><td style="padding:10px 14px;font-size:12px;color:#888;">Deposit Required at Scheduling</td><td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:700;color:#F5C400;">${fmt(depAmt)}</td></tr>`:''}
       <tr style="background:#111;"><td colspan="2" style="padding:8px 14px;font-size:11px;color:#666;">Payment: ${sv('pterm')||'Due on completion'} · Valid for ${sv('vf')||'30 days'}</td></tr>
+      ${payMethods?`<tr style="background:#0d0d0d;"><td colspan="2" style="padding:10px 14px;font-size:12px;color:#aaaaaa;"><strong style="color:#F5C400;">Accepted:</strong> ${payMethods}</td></tr>`:''}
     </table>
   </td></tr>
 
@@ -1567,7 +1636,7 @@ function buildHtmlEmail() {
 function buildEmailBody() {
   const em=sv('ce'), cust=sv('cn')||'Customer', addr=sv('ja')||'Job Site';
   const qnum=sv('qn'), biz=sv('bp')||'901-258-9942';
-  const { rows, total, dep } = buildLineRows();
+  const { rows, total, dep, cashDiscAmt, payMethods } = buildLineRows();
   const depAmt = dep>0 ? Math.round(total*dep) : 0;
   const subj=`CHEW ${S.status} ${qnum} — ${addr}`;
   const htmlBody = buildHtmlEmail();
