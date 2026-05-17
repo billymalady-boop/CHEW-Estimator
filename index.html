@@ -728,18 +728,22 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
     <!-- STEP 3 -->
     <div class="g3" style="margin-top:12px">
       <div class="f"><label>Number of Loads</label>
-        <input type="number" id="deb-loads" value="1" min="1" oninput="calcDeb()">
+        <input type="number" id="deb-loads" value="1" min="1" oninput="$('deb-mhrs')._manualOverride=false;calcDeb()">
         <div class="hint">Each load = one trip to transfer station</div>
       </div>
       <div class="f"><label>Loading Attachment</label>
         <div class="rg">
-          <div class="rb on" onclick="sr('deb-att','grapple',this);calcDeb()">Grapple $155</div>
-          <div class="rb" onclick="sr('deb-att','bucket',this);calcDeb()">Bucket $150</div>
+          <div class="rb on" onclick="sr('deb-att','grapple',this);$('deb-mhrs')._manualOverride=false;calcDeb()">Grapple $155</div>
+          <div class="rb" onclick="sr('deb-att','bucket',this);$('deb-mhrs')._manualOverride=false;calcDeb()">Bucket $150</div>
         </div>
         <input type="hidden" id="deb-att" value="grapple">
       </div>
       <div class="f"><label>Machine Loading Time (hrs)</label>
-        <input type="number" id="deb-mhrs" value="1" step="0.5" min="0.5" oninput="calcDeb()">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <input type="number" id="deb-mhrs" step="0.5" min="0.5" oninput="this._manualOverride=true;calcDeb()" style="flex:1;" placeholder="Auto">
+          <button onclick="clearMhrsOverride()" style="background:#333;border:1px solid #555;color:#888;padding:5px 10px;font-size:10px;cursor:pointer;border-radius:3px;white-space:nowrap;letter-spacing:1px;" title="Reset to auto-calculated time">↺ AUTO</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="deb-mhrs-hint">Auto-calculated from material &amp; loads</div>
       </div>
     </div>
     <div class="f"><label>Trip Charge Per Load to Transfer Station ($/load — default $65)</label>
@@ -1243,15 +1247,15 @@ function calcGrv(){
 
 // ── DEBRIS ──
 const DEB_DATA={
-  brush:  {lo:10,hi:15, chg:165,maxF:1.0},
-  yard:   {lo:10,hi:20, chg:165,maxF:1.0},
-  household:{lo:20,hi:35,chg:215,maxF:1.0},
-  cd:     {lo:30,hi:50, chg:215,maxF:0.75},
-  stumps: {lo:40,hi:60, chg:180,maxF:0.75},
-  dirt:   {lo:75,hi:85, chg:165,maxF:0.75},
-  wetsoil:{lo:100,hi:120,chg:165,maxF:0.50},
-  gravel: {lo:90,hi:105,chg:165,maxF:0.50},
-  concrete:{lo:100,hi:150,chg:240,maxF:0.25}
+  brush:  {lo:10,hi:15, chg:165,maxF:1.0, minsPerLoad:{grapple:17,bucket:27}},
+  yard:   {lo:10,hi:20, chg:165,maxF:1.0, minsPerLoad:{grapple:17,bucket:27}},
+  household:{lo:20,hi:35,chg:215,maxF:1.0,minsPerLoad:{grapple:25,bucket:32}},
+  cd:     {lo:30,hi:50, chg:215,maxF:0.75,minsPerLoad:{grapple:25,bucket:32}},
+  stumps: {lo:40,hi:60, chg:180,maxF:0.75,minsPerLoad:{grapple:22,bucket:35}},
+  dirt:   {lo:75,hi:85, chg:165,maxF:0.75,minsPerLoad:{grapple:12,bucket:12}},
+  wetsoil:{lo:100,hi:120,chg:165,maxF:0.50,minsPerLoad:{grapple:15,bucket:15}},
+  gravel: {lo:90,hi:105,chg:165,maxF:0.50,minsPerLoad:{grapple:11,bucket:11}},
+  concrete:{lo:100,hi:150,chg:240,maxF:0.25,minsPerLoad:{grapple:30,bucket:22}}
 };
 const TRL_CF=196;
 let DISP_COST=98.75; // overridden by R.dumpCost after loadSettings()
@@ -1274,14 +1278,38 @@ function setFill(val,el){
   calcDeb();
 }
 
+function autoCalcLoadingTime(mat, loads, att) {
+  const md = DEB_DATA[mat]||DEB_DATA.brush;
+  const mins = md.minsPerLoad?.[att] || 20;
+  const rawHrs = (loads * mins) / 60;
+  // Round up to nearest 0.5
+  return Math.ceil(rawHrs * 2) / 2;
+}
+
+function clearMhrsOverride() {
+  const el = $('deb-mhrs');
+  if (el) { el._manualOverride = false; calcDeb(); }
+}
+
 function calcDeb(){
   if(!S.debOn){S.deb=0;S.debDisp=0;S.debH=0;updAmt('deb',0,false,'');calcTot();return;}
   const mat=sv('deb-mat')||'brush';
   const md=DEB_DATA[mat]||DEB_DATA.brush;
   const fill=parseFloat(sv('deb-fill'))||0.5;
   const loads=fv('deb-loads')||1;
-  const attRate=sv('deb-att')==='bucket'?R.bucket:R.grapple;
-  const mhrs=fv('deb-mhrs')||1;
+  const att=sv('deb-att')||'grapple';
+  const attRate=att==='bucket'?R.bucket:R.grapple;
+  // Auto-calculate loading time unless user has manually overridden
+  const mhrsEl=$('deb-mhrs');
+  let mhrs;
+  if(mhrsEl && mhrsEl._manualOverride) {
+    mhrs=parseFloat(mhrsEl.value)||1;
+  } else {
+    mhrs=autoCalcLoadingTime(mat, loads, att);
+    if(mhrsEl) mhrsEl.value=mhrs;
+    const hint=$('deb-mhrs-hint');
+    if(hint) hint.textContent=`Auto: ${loads} loads × ${DEB_DATA[mat]?.minsPerLoad?.[att]||20} min = ${mhrs} hrs`;
+  }
   const tripChg=fv('deb-trip')||65;
   const cf=TRL_CF*fill;
   const dens=(md.lo+md.hi)/2;
