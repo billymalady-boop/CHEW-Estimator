@@ -1339,94 +1339,15 @@ function emailQ() {
     alert('⚠ No customer email address entered.\n\nPlease fill in the Customer Email field before sending.');
     return;
   }
-  const clientId = localStorage.getItem('chew_drive_client');
-  if (!clientId) {
-    const id = prompt(
-      'Gmail sending requires a Google OAuth Client ID.\n\n' +
-      'This is the same Client ID used for Save to Drive.\n' +
-      'If you already set that up, paste it again here:\n\n' +
-      '(Or set up at console.cloud.google.com → APIs & Services → Credentials)'
-    );
-    if (!id || !id.trim()) return;
-    localStorage.setItem('chew_drive_client', id.trim());
-  }
-  setEmailStatus('⟳ Connecting to Gmail...');
-  const storedId = localStorage.getItem('chew_drive_client');
-  if (!window.google?.accounts?.oauth2) {
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.onload = () => authAndSendEmail(storedId);
-    script.onerror = () => setEmailStatus('⚠ Could not load Google auth');
-    document.head.appendChild(script);
-  } else {
-    authAndSendEmail(storedId);
-  }
-}
-
-function setEmailStatus(msg) {
-  const btn = document.querySelector('.btn-y');
-  if (btn) btn.textContent = msg;
-  setTimeout(() => { if (btn) btn.textContent = '✉ Email Quote'; }, 5000);
-}
-
-function authAndSendEmail(clientId) {
-  if (gmailToken) { doSendGmail(); return; }
-  const tc = google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
-    scope: 'https://www.googleapis.com/auth/gmail.send',
-    callback: (r) => {
-      if (r.error) { setEmailStatus('⚠ Auth failed: ' + r.error); return; }
-      gmailToken = r.access_token;
-      doSendGmail();
-    }
-  });
-  tc.requestAccessToken();
-}
-
-async function doSendGmail() {
-  const { to, subject, body, cust, addr, qnum } = buildEmailBody();
-  // Build RFC 2822 message with To, From, CC
-  const msgLines = [
-    `From: CHEW Central Texas Site Services <${CHEW_EMAIL}>`,
-    `To: ${to}`,
-    `Cc: ${CHEW_EMAIL}`,
-    `Subject: ${subject}`,
-    `Content-Type: text/plain; charset=utf-8`,
-    ``,
-    body
-  ];
-  const raw = msgLines.join('\r\n');
-  // Base64url encode
-  const encoded = btoa(unescape(encodeURIComponent(raw)))
-    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  try {
-    setEmailStatus('⟳ Sending...');
-    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + gmailToken,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ raw: encoded })
-    });
-    if (res.ok) {
-      setEmailStatus('✓ Sent to ' + to);
-      alert('✅ Email sent successfully!\n\nTo: ' + to + '\nCC: ' + CHEW_EMAIL + '\nQuote: ' + qnum);
-    } else {
-      const err = await res.json();
-      // Token may have expired — clear and retry
-      if (res.status === 401) {
-        gmailToken = null;
-        setEmailStatus('⚠ Session expired — click again to re-auth');
-      } else {
-        setEmailStatus('⚠ Send failed');
-        alert('Send failed: ' + (err.error?.message || JSON.stringify(err)));
-      }
-    }
-  } catch(e) {
-    setEmailStatus('⚠ Network error');
-    alert('Network error: ' + e.message);
-  }
+  const { subject, body } = buildEmailBody();
+  // Open Gmail compose window with pre-filled fields
+  // User must be signed into chew.earthworks@gmail.com in their browser
+  const gmailUrl = 'https://mail.google.com/mail/?view=cm'
+    + '&to=' + encodeURIComponent(em)
+    + '&cc=' + encodeURIComponent(CHEW_EMAIL)
+    + '&su=' + encodeURIComponent(subject)
+    + '&body=' + encodeURIComponent(body);
+  window.open(gmailUrl, '_blank');
 }
 
 // ── DISTANCE CALCULATION — No API key needed ──
