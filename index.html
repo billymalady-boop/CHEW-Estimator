@@ -964,16 +964,16 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
         <input type="number" id="misc" value="0" min="0" oninput="calcTot()">
       </div>
     </div>
-    <div class="f"><label>Contingency Buffer <span style="color:var(--muted);font-size:10px;font-weight:400;">— roll into total, not shown to customer</span></label>
+    <div class="f"><label>Site Conditions Buffer <span style="color:var(--muted);font-size:10px;font-weight:400;">— shown on email as a line item</span></label>
       <div class="rg">
-        <div class="rb" onclick="sr('cont','0',this);calcTot()">None</div>
-        <div class="rb" onclick="sr('cont','5',this);calcTot()" title="Clean site, repeat customer">5% Clean</div>
-        <div class="rb on" onclick="sr('cont','10',this);calcTot()" title="Standard unknown residential">10% Standard</div>
-        <div class="rb" onclick="sr('cont','15',this);calcTot()" title="Overgrown, sloped, haven't seen it">15% Rough</div>
-        <div class="rb" onclick="sr('cont','20',this);calcTot()" title="Demo, suspected buried debris, anything sketchy">20% Risky</div>
+        <div class="rb" onclick="sr('cont','0',this);calcTot()" title="Site visited, scope is fully known">None — Site Confirmed</div>
+        <div class="rb" onclick="sr('cont','5',this);calcTot()" title="Clean site, seen it, minimal unknowns">5% — Clean Site</div>
+        <div class="rb on" onclick="sr('cont','10',this);calcTot()" title="Standard residential, some unknowns">10% — Standard</div>
+        <div class="rb" onclick="sr('cont','15',this);calcTot()" title="Overgrown, sloped, not yet visited">15% — Rough/Unseen</div>
+        <div class="rb" onclick="sr('cont','20',this);calcTot()" title="Demo, buried debris suspected, complex site">20% — Complex/Demo</div>
       </div>
       <input type="hidden" id="cont" value="10">
-      <div class="hint">5% clean site · 10% standard · 15% overgrown/sloped · 20% demo/sketchy — never shown on quote</div>
+      <div class="hint">None=site confirmed · 5%=clean · 10%=standard · 15%=rough/unseen · 20%=complex/demo · shown on email as Site Conditions Buffer</div>
     </div>
     <div class="g3">
       <div class="f"><label>Deposit Required</label>
@@ -1053,7 +1053,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
   <div class="ps-l" id="psl-grd" style="display:none"><span class="psl">Grading / Site Prep</span><span class="psv" id="psv-grd">—</span></div>
   <div class="ps-l" id="psl-trn" style="display:none"><span class="psl">Trenching / Digging Arm</span><span class="psv" id="psv-trn">—</span></div>
   <div class="ps-l" id="psl-sur" style="display:none"><span class="psl">Surcharges</span><span class="psv" id="psv-sur">—</span></div>
-  <div class="ps-l" id="psl-con" style="display:none"><span class="psl">Contingency Buffer</span><span class="psv" id="psv-con">—</span></div>
+  <div class="ps-l" id="psl-con" style="display:none"><span class="psl">Site Conditions Buffer</span><span class="psv" id="psv-con">—</span></div>
   <div class="ps-tot">
     <span class="pstl">Total</span>
     <span class="pstv" id="psv-tot">$0</span>
@@ -1099,7 +1099,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
   <div class="sl"><span class="sll">Grading / Site Prep</span><span class="slv z" id="r-grd">—</span></div>
   <div class="sl"><span class="sll">Trenching</span><span class="slv z" id="r-trn">—</span></div>
   <div class="sl"><span class="sll">Surcharges</span><span class="slv z" id="r-sur">—</span></div>
-  <div class="sl"><span class="sll">Contingency</span><span class="slv z" id="r-con">—</span></div>
+  <div class="sl"><span class="sll">Site Conditions Buffer</span><span class="slv z" id="r-con">—</span></div>
   <div class="sl" id="r-cashdisc-row"><span class="sll" style="color:#2ecc71;">Cash Discount</span><span class="slv z" id="r-cash-disc">—</span></div>
   <div class="strow"><span class="stl">Total</span><span class="stv" id="r-tot">$0</span></div>
   <div style="padding:6px 0;border-top:1px solid #222;margin-top:2px;font-size:10px;color:#666;line-height:1.6;" id="r-pay-methods">—</div>
@@ -1609,7 +1609,7 @@ function buildLineRows() {
   // Cash discount row
   // Show contingency as line item so math adds up for customer
   const contPctDisplay = parseFloat(sv('cont'))||0;
-  if(contAmt>0) rows.push(`<tr><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#aaaaaa;font-size:13px;font-style:italic;">Contingency Buffer (${contPctDisplay}%)</td><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;text-align:right;font-weight:600;color:#cccccc;font-size:13px;">${fmt(contAmt)}</td></tr>`);
+  if(contAmt>0) rows.push(`<tr><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#aaaaaa;font-size:13px;font-style:italic;">Site Conditions Buffer (${contPctDisplay}%)</td><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;text-align:right;font-weight:600;color:#cccccc;font-size:13px;">${fmt(contAmt)}</td></tr>`);
   if(cashDiscAmt>0) rows.push(`<tr style="background:#0a1f0a;"><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#2ecc71;font-size:14px;">Cash / Instant Pay Discount (${sv('cash-disc')}%)</td><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;text-align:right;font-weight:700;color:#2ecc71;font-size:14px;">-${fmt(cashDiscAmt)}</td></tr>`);
   return { rows, total, dep: parseFloat(sv('dep'))/100, base, contAmt, cashDiscAmt, payMethods };
 }
