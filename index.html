@@ -1774,28 +1774,31 @@ function applyRatesToCalcs() {
   DEB_DATA.wetsoil.chg = R.debWetsoil;
   DEB_DATA.gravel.chg = R.debGravel;
   DEB_DATA.concrete.chg = R.debConcrete;
-  // Update grading attachment dropdown labels and values
-  const grdAtt = $('grd-att');
-  if (grdAtt) {
-    const cur = grdAtt.value;
-    grdAtt.innerHTML = `
-      <option value="${R.bucket}">Bucket — $${R.bucket}/hr</option>
-      <option value="${R.grapple}">Grapple — $${R.grapple}/hr</option>
-      <option value="${R.trench}">Land Planer — $${R.trench}/hr</option>`;
-    grdAtt.value = cur; // restore selection if possible
-  }
-  // Update default trip charge inputs if not user-edited
-  ['deb-trip','gv-trip','dem-trip'].forEach(id => {
-    const el = $(id); if (el && !el._userEdited) el.value = R.trip;
-  });
-  // Update debris disposal rate badges on material cards
-  const debRates = {brush:R.debBrush,yard:R.debYard,household:R.debHousehold,
-    cd:R.debCd,stumps:R.debStumps,dirt:R.debDirt,wetsoil:R.debWetsoil,
-    gravel:R.debGravel,concrete:R.debConcrete};
-  Object.entries(debRates).forEach(([mat,rate]) => {
-    const el = document.querySelector('#mc-'+mat+' .mc-chg');
-    if (el) el.textContent = '$'+rate+'/ton';
-  });
+  // Update grading attachment dropdown labels and values (guard null)
+  try {
+    const grdAtt = $('grd-att');
+    if (grdAtt) {
+      const cur = grdAtt.value;
+      grdAtt.innerHTML = `<option value="${R.bucket}">Bucket — $${R.bucket}/hr</option><option value="${R.grapple}">Grapple — $${R.grapple}/hr</option><option value="${R.trench}">Land Planer — $${R.trench}/hr</option>`;
+      grdAtt.value = cur;
+    }
+  } catch(e) {}
+  // Update default trip charge inputs if not user-edited (guard null)
+  try {
+    ['deb-trip','gv-trip','dem-trip'].forEach(id => {
+      const el = $(id); if (el && !el._userEdited) el.value = R.trip;
+    });
+  } catch(e) {}
+  // Update debris disposal rate badges on material cards (guard null)
+  try {
+    const debRates = {brush:R.debBrush,yard:R.debYard,household:R.debHousehold,
+      cd:R.debCd,stumps:R.debStumps,dirt:R.debDirt,wetsoil:R.debWetsoil,
+      gravel:R.debGravel,concrete:R.debConcrete};
+    Object.entries(debRates).forEach(([mat,rate]) => {
+      const el = document.querySelector('#mc-'+mat+' .mc-chg');
+      if (el) el.textContent = '$'+rate+'/ton';
+    });
+  } catch(e) {}
 }
 
 function openSettings() {
