@@ -282,25 +282,16 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
       <div class="f"><label>Customer Name</label><input type="text" id="cn" placeholder="Full name" oninput="sp()"></div>
       <div class="f"><label>Customer Phone</label><input type="text" id="cp" placeholder="(254) 000-0000" oninput="sp()"></div>
     </div>
-    <!-- GOOGLE API KEY SETUP -->
+    <!-- ADDRESS LOOKUP — No API key needed -->
     <div class="api-setup" id="api-setup">
-      <div class="api-title">🗺 Google Maps — Auto Distance Setup</div>
+      <div class="api-title">📍 Address Distance Lookup</div>
       <div class="api-body">
-        <div class="g2" style="align-items:end">
-          <div class="f" style="margin:0">
-            <label>Google Maps API Key</label>
-            <input type="text" id="gapi-key" placeholder="Paste your API key here..." oninput="saveApiKey()" autocomplete="off" style="font-family:monospace;font-size:12px;">
-          </div>
-          <div>
-            <button class="abtn" onclick="initMaps()">✓ Activate</button>
-          </div>
-        </div>
         <div class="api-status" id="api-status">
-          <span id="api-dot" class="dot-off">●</span>
-          <span id="api-msg">No API key — enter key above to enable auto-distance and address autocomplete</span>
+          <span id="api-dot" class="dot-on">●</span>
+          <span id="api-msg">Address lookup ready — type address and click GET DIST or press Enter</span>
         </div>
         <div class="api-help">
-          Get a free key: <strong>console.cloud.google.com</strong> → New Project → Enable "Maps JavaScript API" + "Distance Matrix API" + "Places API" → Credentials → Create API Key · Free $200/month credit — you'll never pay at this volume.
+          Powered by OpenStreetMap · No API key required · Works on any device · Distance is driving estimate from 1125 Lindorbet Rd, Copperas Cove TX
         </div>
       </div>
     </div>
@@ -1272,152 +1263,103 @@ ${biz}`;
   window.location.href=`mailto:${em}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
 }
 
-// ── GOOGLE MAPS API ──
-const BASE_ADDR = '1125 Lindorbet Rd, Copperas Cove, TX 76522';
-let mapsReady = false;
-let autocomplete = null;
-let distService = null;
+// ── DISTANCE CALCULATION — No API key needed ──
+// Uses OpenStreetMap Nominatim for geocoding (free, no key required)
+// Uses Haversine formula for distance calculation
+const BASE_LAT = 31.0018; // 1125 Lindorbet Rd, Copperas Cove TX
+const BASE_LNG = -97.9130;
 
-// Must be defined BEFORE Maps script loads to suppress the error popup
-window.gm_authFailure = function() {
-  setApiStatus('error', 'API key rejected — ensure Maps JavaScript API, Distance Matrix API and Places API are all enabled at console.cloud.google.com and the website restriction includes this URL');
-  mapsReady = false;
-};
-
-function saveApiKey() {
-  const key = $('gapi-key').value.trim();
-  if (key) localStorage.setItem('chew_gapi', key);
-}
-
+function saveApiKey() {} // kept for compatibility
 function loadSavedKey() {
-  const saved = localStorage.getItem('chew_gapi');
-  if (saved) {
-    $('gapi-key').value = saved;
-    // Auto-init only if we're on https (GitHub Pages), not file://
-    if (window.location.protocol === 'https:') {
-      initMaps();
-    } else {
-      setApiStatus('error', 'Open from GitHub Pages URL for Maps to work: https://billymalady-boop.github.io/CHEW-Estimator/');
-    }
-  }
+  // Auto-show the address field as ready
+  setApiStatus('on', 'Address lookup ready — type an address and click GET DIST');
+  $('addr-hint').textContent = 'Type full address and click GET DIST to auto-calculate distance';
 }
-
 function initMaps() {
-  const key = $('gapi-key').value.trim();
-  if (!key) { setApiStatus('error', 'No API key entered'); return; }
-
-  // If Maps already loaded and working, don't reload
-  if (mapsReady) {
-    setApiStatus('on', 'Google Maps already active');
-    return;
-  }
-
-  // Remove any existing Maps scripts
-  document.querySelectorAll('script[id^="gmaps"]').forEach(s => s.remove());
-
-  setApiStatus('loading', 'Loading Google Maps...');
-  localStorage.setItem('chew_gapi', key);
-
-  const script = document.createElement('script');
-  script.id = 'gmaps-script';
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=onMapsLoaded&loading=async`;
-  script.async = true;
-  script.onerror = () => {
-    setApiStatus('error', 'Script failed to load — check internet connection and API key');
-  };
-  document.head.appendChild(script);
+  setApiStatus('on', 'Address lookup ready — type an address and click GET DIST');
+  $('addr-hint').textContent = 'Type full address and click GET DIST';
 }
 
-window.onMapsLoaded = function() {
-  try {
-    mapsReady = true;
-    distService = new google.maps.DistanceMatrixService();
-
-    // Initialize Places Autocomplete
-    const input = $('ja');
-    autocomplete = new google.maps.places.Autocomplete(input, {
-      componentRestrictions: { country: 'us' },
-      fields: ['formatted_address', 'geometry'],
-      types: ['geocode', 'establishment']
-    });
-
-    // Prevent form submit on Enter
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') e.preventDefault();
-    });
-
-    autocomplete.addListener('place_changed', onPlaceSelected);
-    setApiStatus('on', 'Google Maps active — type an address to get autocomplete and auto-distance');
-    $('addr-hint').textContent = 'Start typing — select from dropdown to auto-calculate distance';
-
-  } catch(err) {
-    setApiStatus('error', 'Maps loaded but setup failed: ' + err.message);
-  }
-};
-
-function onPlaceSelected() {
-  const place = autocomplete.getPlace();
-  if (!place || !place.geometry) {
-    // Fallback: try to geocode whatever is in the field
-    const addr = $('ja').value;
-    if (addr) geocodeAndCalc(addr);
-    return;
-  }
-  const destAddr = place.formatted_address || $('ja').value;
-  $('ja').value = destAddr;
-  sp();
-  calcDistance(destAddr);
+// Haversine formula — calculates straight-line distance between two lat/lng points
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 3958.8; // Earth radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
 }
 
-function geocodeAndCalc(addr) {
-  // Fallback geocoder if no place selected from dropdown
-  if (!mapsReady) return;
-  const geocoder = new google.maps.Geocoder();
-  geocoder.geocode({ address: addr + ', Texas' }, (results, status) => {
-    if (status === 'OK' && results[0]) {
-      calcDistance(results[0].formatted_address);
-    } else {
-      setAddrStatus('⚠ Address not found — try selecting from dropdown');
-    }
-  });
+// Estimate drive time (straight-line × 1.35 for road factor, avg 45mph rural TX)
+function estDriveTime(miles) {
+  const driveMiles = miles * 1.35;
+  const mins = Math.round(driveMiles / 45 * 60);
+  if (mins < 60) return mins + ' min (est.)';
+  const hrs = Math.floor(mins/60);
+  const rem = mins % 60;
+  return hrs + 'h ' + (rem > 0 ? rem + 'm' : '') + ' (est.)';
 }
 
-function calcDistance(destAddr) {
-  if (!mapsReady || !distService) return;
-  setAddrStatus('⟳ Calculating distance...');
-  distService.getDistanceMatrix({
-    origins: [BASE_ADDR],
-    destinations: [destAddr],
-    travelMode: google.maps.TravelMode.DRIVING,
-    unitSystem: google.maps.UnitSystem.IMPERIAL,
-  }, (response, status) => {
-    if (status !== 'OK') {
-      setAddrStatus('⚠ Distance lookup failed: ' + status);
-      return;
-    }
-    const element = response.rows[0].elements[0];
-    if (element.status !== 'OK') {
-      setAddrStatus('⚠ Could not calculate route: ' + element.status);
-      return;
-    }
-    const distText = element.distance.text;
-    const miles = parseFloat(distText.replace(/[^0-9.]/g, ''));
-    const durText = element.duration.text;
-    $('dist').value = Math.round(miles);
-    $('drive-time').textContent = durText + ' from base';
-    setAddrStatus('✓ ' + distText + ' · ' + durText);
-    $('dist-warn').style.display = miles > 60 ? 'block' : 'none';
-    calcMob();
-  });
-}
-
-// Manual distance lookup button — works even without autocomplete selection
-function lookupDistance() {
+async function lookupDistance() {
   const addr = $('ja').value.trim();
   if (!addr) { alert('Enter a job site address first'); return; }
-  if (!mapsReady) { alert('Activate Google Maps API first'); return; }
-  geocodeAndCalc(addr);
+  setAddrStatus('⟳ Looking up address...');
+
+  try {
+    // Use Nominatim OpenStreetMap geocoder — free, no key needed
+    const query = encodeURIComponent(addr + ', Texas, USA');
+    const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&countrycodes=us`;
+    const resp = await fetch(url, {
+      headers: { 'Accept-Language': 'en', 'User-Agent': 'CHEW-Estimator/1.0' }
+    });
+    const data = await resp.json();
+
+    if (!data || data.length === 0) {
+      setAddrStatus('⚠ Address not found — try adding city and state (e.g. 1000 Main St, Gatesville TX)');
+      return;
+    }
+
+    const result = data[0];
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    const displayName = result.display_name;
+
+    // Calculate straight-line distance
+    const miles = haversine(BASE_LAT, BASE_LNG, lat, lng);
+    // Add 20% for road routing estimate
+    const roadMiles = Math.round(miles * 1.2);
+    const driveTime = estDriveTime(miles);
+
+    // Update fields
+    $('dist').value = roadMiles;
+    $('drive-time').textContent = driveTime + ' from base';
+    setAddrStatus('✓ ' + roadMiles + ' mi (est.) · ' + driveTime);
+
+    // Update address field with full address
+    $('ja').value = displayName.split(',').slice(0,4).join(',');
+    sp();
+
+    // Check 60-mile radius
+    $('dist-warn').style.display = roadMiles > 60 ? 'block' : 'none';
+    calcMob();
+
+  } catch(err) {
+    setAddrStatus('⚠ Lookup failed — check internet connection or enter miles manually');
+  }
 }
+
+// Allow Enter key to trigger lookup
+window.addEventListener('load', () => {
+  loadSavedKey();
+  const jaField = $('ja');
+  if (jaField) {
+    jaField.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); lookupDistance(); }
+    });
+  }
+});
 
 function setApiStatus(type, msg) {
   const dot = $('api-dot');
@@ -1432,9 +1374,6 @@ function setAddrStatus(msg) {
   el.textContent = msg;
   el.style.display = msg ? 'block' : 'none';
 }
-
-// On page load — restore saved key
-window.addEventListener('load', () => { loadSavedKey(); });
 function resetF(){
   if(!confirm('Clear all data and start a new quote?'))return;
   ['clr','grv','deb','dem','grd','trn'].forEach(s=>{
