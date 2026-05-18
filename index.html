@@ -1797,6 +1797,47 @@ function buildHtmlEmail() {
     </div>
   </td></tr>
 
+  <!-- ACCEPTANCE SECTION — only on ESTIMATE and QUOTE, not INVOICE, not subscriber -->
+  ${S.status!=='INVOICE' && !$('is-subscriber')?.checked ? `
+  <tr><td style="padding:24px 32px;background:#111111;border-top:2px solid #CC2222;">
+    <div style="font-size:10px;color:#CC2222;letter-spacing:2px;font-weight:700;margin-bottom:14px;">ACCEPT THIS ${S.status}</div>
+    <div style="font-size:12px;color:#888888;line-height:1.7;margin-bottom:16px;">
+      To accept this ${S.status.toLowerCase()} and authorize CHEW to schedule your job, type your full name below and check the box. This serves as your digital acceptance of the scope, pricing, and terms above.
+    </div>
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding-bottom:12px;">
+          <div style="font-size:11px;color:#888;margin-bottom:6px;letter-spacing:1px;">YOUR FULL NAME</div>
+          <div style="background:#1a1a1a;border:1px solid #444;border-radius:3px;padding:12px 14px;font-size:14px;color:#555;font-style:italic;">
+            [ Customer types name here ]
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding-bottom:16px;">
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="width:16px;height:16px;border:2px solid #CC2222;border-radius:2px;margin-top:2px;flex-shrink:0;"></div>
+            <div style="font-size:12px;color:#aaaaaa;line-height:1.7;">
+              I have read and accept the scope of work, pricing, disclaimer, ground damage notice, and terms stated in this ${S.status.toLowerCase()}. I understand this is ${S.status==='ESTIMATE'?'an estimate subject to site conditions':'a binding quote'} and that a deposit may be required to schedule.
+            </div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="background:#CC2222;padding:12px 28px;border-radius:3px;">
+                <div style="font-size:13px;font-weight:700;color:#ffffff;letter-spacing:2px;">✓ ACCEPT ${S.status} — REPLY TO CONFIRM</div>
+              </td>
+            </tr>
+          </table>
+          <div style="font-size:11px;color:#555;margin-top:8px;">Reply to this email with your name typed above to confirm acceptance. CHEW will contact you within 24 hours to schedule.</div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>` : ''}
+
   <!-- FOOTER -->
   <tr><td style="padding:14px 32px;background:#0d0d0d;border-top:3px solid #CC2222;text-align:center;">
     <div style="font-size:11px;color:#444;letter-spacing:2px;">CHEW · CLEARING · HAULING · EARTHWORK · WASTE REMOVAL</div>
