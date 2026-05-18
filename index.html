@@ -421,6 +421,16 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
         </div>
 
         <div class="settings-section">
+          <h3>CLEAR & KEEP SUBSCRIBER DISCOUNTS</h3>
+          <div class="settings-grid">
+            <div class="sf"><label>Basic Plan Discount (%)</label><input type="number" id="s-sub-basic" value="5" min="0" max="25"><div class="hint">2x/year plan</div></div>
+            <div class="sf"><label>Standard Plan Discount (%)</label><input type="number" id="s-sub-standard" value="10" min="0" max="25"><div class="hint">4x/year plan — most popular</div></div>
+            <div class="sf"><label>Premium Plan Discount (%)</label><input type="number" id="s-sub-premium" value="15" min="0" max="25"><div class="hint">6x/year plan</div></div>
+          </div>
+          <div style="font-size:10px;color:#555;margin-top:8px;">These apply on top of any cash discount. Maximum combined discount is 25%.</div>
+        </div>
+
+        <div class="settings-section">
           <h3>PIN MANAGEMENT</h3>
           <div class="settings-grid">
             <div class="sf"><label>Change PIN (4 digits)</label><input type="password" id="s-pin-new" maxlength="4" placeholder="New PIN"><div class="hint">Current default: 2580</div></div>
@@ -517,6 +527,30 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
       <div class="f"><label>Your Business Phone</label><input type="text" id="bp" placeholder="(254) 000-0000" oninput="sp()"></div>
       <div class="f"><label>Customer Email (for email delivery)</label><input type="email" id="ce" placeholder="customer@email.com"></div>
     </div>
+    <!-- SUBSCRIBER TOGGLE -->
+    <div style="background:#0a1a0a;border:1px solid #1a3a1a;border-radius:3px;padding:12px 14px;margin-bottom:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="is-subscriber" onchange="toggleSubscriber()" style="width:18px;height:18px;accent-color:#CC2222;cursor:pointer;">
+            <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;color:#2ecc71;letter-spacing:2px;text-transform:uppercase;">✦ Clear & Keep Subscriber</span>
+          </label>
+          <span style="font-size:11px;color:#555;" id="sub-plan-label">Select plan below when active</span>
+        </div>
+        <div id="sub-plan-selector" style="display:none;gap:6px;display:none;">
+          <div class="rg" style="margin:0;">
+            <div class="rb" onclick="sr('sub-plan','basic',this);calcTot()" title="2x/year · 5% off">Basic 5%</div>
+            <div class="rb on" onclick="sr('sub-plan','standard',this);calcTot()" title="4x/year · 10% off">Standard 10%</div>
+            <div class="rb" onclick="sr('sub-plan','premium',this);calcTot()" title="6x/year · 15% off">Premium 15%</div>
+          </div>
+          <input type="hidden" id="sub-plan" value="standard">
+        </div>
+      </div>
+      <div id="sub-active-info" style="display:none;margin-top:8px;font-size:11px;color:#2ecc71;">
+        ✓ Subscriber discount applied — rates locked per Clear & Keep agreement · SignWell signature required
+      </div>
+    </div>
+
     <div class="f"><label>Scope / Job Description</label><textarea id="jn" placeholder="Describe what you saw — this protects you if scope changes..." oninput="sp()"></textarea></div>
     <div class="info" style="border-color:#CC2222;background:#1a0a0a;color:#cc8833;margin-top:8px;font-size:11px;">
       ⚠ <strong style="color:#CC2222;">Ground Damage Notice:</strong> Heavy tracked equipment may cause ruts and turf damage. Customer must mark all irrigation heads, sprinkler lines, and landscaping before work begins. CHEW is not responsible for reseeding, resodding, or repairing turf damage from normal equipment operation.
@@ -1105,6 +1139,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
   <div class="sl"><span class="sll">Trenching</span><span class="slv z" id="r-trn">—</span></div>
   <div class="sl"><span class="sll">Surcharges</span><span class="slv z" id="r-sur">—</span></div>
   <div class="sl"><span class="sll">Site Conditions Buffer</span><span class="slv z" id="r-con">—</span></div>
+  <div class="sl"><span class="sll" style="color:#2ecc71;">Subscriber Discount</span><span class="slv z" id="r-sub-disc" style="color:#2ecc71;">—</span></div>
   <div class="sl" id="r-cashdisc-row"><span class="sll" style="color:#2ecc71;">Cash Discount</span><span class="slv z" id="r-cash-disc">—</span></div>
   <div class="strow"><span class="stl">Total</span><span class="stv" id="r-tot">$0</span></div>
   <div style="padding:6px 0;border-top:1px solid #222;margin-top:2px;font-size:10px;color:#666;line-height:1.6;" id="r-pay-methods">—</div>
@@ -1469,15 +1504,26 @@ function calcTot(){
   const sur=parseFloat(sv('sur'))||0,rush=parseFloat(sv('rush'))||0,misc=fv('misc');
   const cont=parseFloat(sv('cont'))/100,dep=parseFloat(sv('dep'))/100;
   const cashDiscPct=parseFloat(sv('cash-disc'))/100||0;
+  const subDiscPct=getSubDiscount();
   const surTotal=sur+rush+misc;
   const base=S.mob+S.clr+S.grv+S.deb+S.dem+S.grd+S.trn+surTotal;
   const contAmt=base*cont;
   let total=base+contAmt;
   const minHit=total>0&&total<400;
   if(minHit)total=400;
+  // Apply subscriber discount first
+  const subDiscAmt=subDiscPct>0?Math.round(total*subDiscPct):0;
+  total=total-subDiscAmt;
+  // Then cash discount
   const cashDiscAmt=cashDiscPct>0?Math.round(total*cashDiscPct):0;
-  total=total-cashDiscAmt;
+  // Cap combined discount at 25%
+  const combinedPct=(subDiscPct+cashDiscPct);
+  const capAdj=combinedPct>0.25?Math.round(total*(combinedPct-0.25)):0;
+  total=total-cashDiscAmt+capAdj;
   const depAmt=dep>0?Math.round(total*dep):0;
+  // Update subscriber discount display
+  const sdEl=$('r-sub-disc');
+  if(sdEl){if(subDiscAmt>0){sdEl.textContent='-'+fmt(subDiscAmt)+' ('+Math.round(subDiscPct*100)+'% subscriber)';sdEl.style.color='#2ecc71';}else{sdEl.textContent='—';sdEl.style.color='';}}
   // Update cash discount display
   const cdEl=$('r-cash-disc');
   if(cdEl){if(cashDiscAmt>0){cdEl.textContent='-'+fmt(cashDiscAmt)+' ('+sv('cash-disc')+'% cash)';cdEl.classList.remove('z');}else{cdEl.textContent='—';cdEl.classList.add('z');}}
@@ -1612,6 +1658,14 @@ function buildLineRows() {
   if($('pay-card')?.checked) methods.push('💳 Card (+3% processing fee)');
   const payMethods = methods.join('  ·  ');
   // Cash discount row
+  // Subscriber discount line — shown in email
+  const subDiscDisplay = Math.round(getSubDiscount()*100);
+  const subDiscAmtEmail = getSubDiscount()>0 ? Math.round((base+contAmt)*getSubDiscount()) : 0;
+  if(subDiscAmtEmail>0) {
+    const plan = sv('sub-plan')||'standard';
+    const planName = plan==='basic'?'Basic':plan==='premium'?'Premium':'Standard';
+    rows.push(`<tr style="background:#0a1a0a;"><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#2ecc71;font-size:14px;">Clear & Keep Subscriber — ${planName} Plan (${subDiscDisplay}% off)</td><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;text-align:right;font-weight:700;color:#2ecc71;font-size:14px;">-${fmt(subDiscAmtEmail)}</td></tr>`);
+  }
   // Show contingency as line item so math adds up for customer
   const contPctDisplay = parseFloat(sv('cont'))||0;
   if(contAmt>0) rows.push(`<tr><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#aaaaaa;font-size:13px;font-style:italic;">Site Conditions Buffer (${contPctDisplay}%)</td><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;text-align:right;font-weight:600;color:#cccccc;font-size:13px;">${fmt(contAmt)}</td></tr>`);
@@ -1706,6 +1760,7 @@ function buildHtmlEmail() {
       ${depAmt>0?`<tr style="background:#111;"><td style="padding:10px 14px;font-size:12px;color:#888;">Deposit Required at Scheduling</td><td style="padding:10px 14px;text-align:right;font-size:14px;font-weight:700;color:#F5C400;">${fmt(depAmt)}</td></tr>`:''}
       <tr style="background:#111;"><td colspan="2" style="padding:8px 14px;font-size:11px;color:#666;">Payment: ${sv('pterm')||'Due on completion'} · Valid for ${sv('vf')||'30 days'}</td></tr>
       ${payMethods?`<tr style="background:#0d0d0d;"><td colspan="2" style="padding:10px 14px;font-size:12px;color:#aaaaaa;"><strong style="color:#F5C400;">Accepted:</strong> ${payMethods}</td></tr>`:''}
+  ${$('is-subscriber')?.checked?`<tr style="background:#0a1a0a;"><td colspan="2" style="padding:12px 14px;font-size:12px;color:#2ecc71;border-top:1px solid #1a3a1a;">✦ <strong style="color:#2ecc71;">Clear & Keep Subscriber Rate Applied.</strong> A DocuSign/SignWell agreement will be sent separately to formalize your subscription. Please sign and return before your first scheduled visit.</td></tr>`:''}
     </table>
   </td></tr>
 
@@ -1842,6 +1897,25 @@ async function doSendGmail() {
   }
 }
 
+// ── SUBSCRIBER ──
+function toggleSubscriber() {
+  const on = $('is-subscriber').checked;
+  const selector = $('sub-plan-selector');
+  const info = $('sub-active-info');
+  const label = $('sub-plan-label');
+  if (selector) selector.style.display = on ? 'flex' : 'none';
+  if (info) info.style.display = on ? 'block' : 'none';
+  if (label) label.style.display = on ? 'none' : 'inline';
+  calcTot();
+}
+
+function getSubDiscount() {
+  if (!$('is-subscriber')?.checked) return 0;
+  const plan = sv('sub-plan') || 'standard';
+  const disc = plan === 'basic' ? R.subBasic : plan === 'premium' ? R.subPremium : R.subStandard;
+  return disc / 100;
+}
+
 // ── SETTINGS ──
 const SETTINGS_DEFAULTS = {
   bucket:150, brush:160, grapple:155, jack:175, trench:165,
@@ -1961,6 +2035,7 @@ function populateSettingsForm() {
     's-mob1':R.mob1,'s-mob2':R.mob2,'s-mob3':R.mob3,
     's-mob4':R.mob4,'s-mob5':R.mob5,'s-mob6':R.mob6,
     's-dem-conc':R.demConc,'s-dem-asph':R.demAsph,
+    's-sub-basic':R.subBasic,'s-sub-standard':R.subStandard,'s-sub-premium':R.subPremium,
     's-dem-struct':R.demStruct,'s-dem-mixed':R.demMixed,
     's-gv-flexbase':R.gvFlexbase,'s-gv-crushed':R.gvCrushed,
     's-gv-screenings':R.gvScreenings,'s-gv-caliche':R.gvCaliche,
@@ -2005,6 +2080,9 @@ function saveSettings() {
   R.mob5 = parseFloat($('s-mob5').value)||250;
   R.mob6 = parseFloat($('s-mob6').value)||300;
   R.demConc = parseFloat($('s-dem-conc').value)||750;
+  R.subBasic = parseFloat($('s-sub-basic').value)||5;
+  R.subStandard = parseFloat($('s-sub-standard').value)||10;
+  R.subPremium = parseFloat($('s-sub-premium').value)||15;
   R.demAsph = parseFloat($('s-dem-asph').value)||700;
   R.demStruct = parseFloat($('s-dem-struct').value)||500;
   R.demMixed = parseFloat($('s-dem-mixed').value)||600;
