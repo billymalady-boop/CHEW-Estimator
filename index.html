@@ -694,9 +694,9 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
           <option value="custom">Custom (enter price below)</option>
         </select>
       </div>
-      <div class="f"><label>Your Quarry Cost ($/ton) — override</label>
-        <input type="number" id="gv-cost" placeholder="auto" step="0.50" oninput="calcGrv()">
-        <div class="hint">Leave blank to use default · enter your actual pit price to override</div>
+      <div class="f"><label>Your Quarry Cost ($/ton) — leave blank for settings default</label>
+        <input type="number" id="gv-cost" placeholder="Leave blank = use Settings rate" step="0.50" oninput="calcGrv()">
+        <div class="hint" id="gv-cost-hint">Blank = use rate from ⚙ Settings · enter a number only to override for this job</div>
       </div>
       <div class="f"><label>Surface Condition</label>
         <select id="gv-cond" onchange="calcGrv()">
@@ -1310,11 +1310,18 @@ function calcGrv(){
   const customCost=fv('gv-cost');
   const costTon=customCost>0?customCost:(GV_DEF_COST[mat]||16);
   const chargeTon=costTon*GV_MARKUP;
-  const tons=l*w*(d/12)*1.35/2000;
+  // Density by material type (lbs/cf)
+  const GV_DENSITY={flexbase:110,crushed:110,screenings:90,caliche:95,custom:100};
+  const density=GV_DENSITY[mat]||100;
+  const vol_cf=l*w*(d/12);
+  const tons_raw=(vol_cf*density)/2000;
+  const tons=Math.round(tons_raw*1.10*10)/10; // +10% waste factor
   const loads=Math.max(1,Math.ceil(tons/5));
   const matChg=tons*chargeTon;
   const trips=loads*tripChg;
-  const spdH=Math.max(1,tons/10);
+  // Spread hours: 1hr per 1000sf, 2hr minimum
+  const sf=l*w;
+  const spdH=Math.max(2,Math.ceil(sf/1000*10)/10);
   const spdChg=spdH*R.gvSpread+cond;
   const sub=matChg+trips+spdChg;
   const matCost=tons*costTon;
@@ -1326,6 +1333,8 @@ function calcGrv(){
   $('gv-sc').textContent=l>0?fmt(spdChg):'—';
   $('gv-sub').textContent=l>0?fmt(sub):'—';
   $('gv-matcost').textContent=l>0?fmt(matCost)+' @ $'+costTon.toFixed(2)+'/t (your cost)':'—';
+  const hint=$('gv-cost-hint');
+  if(hint) hint.textContent=customCost>0?'Override active: $'+customCost+'/t':'Using Settings rate: $'+costTon.toFixed(2)+'/t for '+mat+' · enter a number to override for this job';
   updAmt('grv',S.grv,S.grvOn,l>0?tons.toFixed(1)+'t':'');
   calcTot();
 }
