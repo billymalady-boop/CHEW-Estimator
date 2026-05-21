@@ -497,7 +497,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
   <div class="pb open" id="ji">
     <div class="g2">
       <div class="f"><label>Customer Name</label><input type="text" id="cn" placeholder="Full name" oninput="sp()"></div>
-      <div class="f"><label>Customer Phone</label><input type="text" id="cp" placeholder="(254) 000-0000" oninput="sp()"></div>
+      <div class="f"><label>Customer Phone</label><input type="text" id="cp" placeholder="(737) 235-1335" oninput="sp()"></div>
     </div>
     <!-- ADDRESS LOOKUP — No API key needed -->
     <div class="api-setup" id="api-setup">
@@ -524,7 +524,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
     </div>
 
     <div class="g2">
-      <div class="f"><label>Your Business Phone</label><input type="text" id="bp" placeholder="(254) 000-0000" oninput="sp()"></div>
+      <div class="f"><label>Your Business Phone</label><input type="text" id="bp" placeholder="(737) 235-1335" oninput="sp()"></div>
       <div class="f"><label>Customer Email (for email delivery)</label><input type="email" id="ce" placeholder="customer@email.com"></div>
     </div>
     <!-- SUBSCRIBER TOGGLE -->
@@ -1254,7 +1254,7 @@ function setStatus(s,el){
 function sp(){
   $('ph-status').textContent=S.status;
   $('ph-qnum').textContent=sv('qn');
-  $('ph-biz').textContent=sv('bp')||'(254) 000-0000';
+  $('ph-biz').textContent=sv('bp')||'(737) 235-1335';
   $('ph-valid').textContent=sv('vf');
   const d=new Date(sv('jd')+'T12:00:00');
   $('ph-date').textContent=isNaN(d.getTime())?'—':d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
@@ -1684,7 +1684,7 @@ function buildLineRows() {
 
 function buildHtmlEmail() {
   const em=sv('ce'), cust=sv('cn')||'Customer', addr=sv('ja')||'Job Site';
-  const qnum=sv('qn'), biz=sv('bp')||'901-258-9942';
+  const qnum=sv('qn'), biz=sv('bp')||'(737) 235-1335';
   const { rows, total, dep, cashDiscAmt, payMethods } = buildLineRows();
   const depAmt = dep>0 ? Math.round(total*dep) : 0;
   const statusColor = S.status==='ESTIMATE' ? '#cc8800' : S.status==='QUOTE' ? '#1a8a1a' : '#1a5ca8';
@@ -1862,7 +1862,7 @@ function buildHtmlEmail() {
 
 function buildEmailBody() {
   const em=sv('ce'), cust=sv('cn')||'Customer', addr=sv('ja')||'Job Site';
-  const qnum=sv('qn'), biz=sv('bp')||'901-258-9942';
+  const qnum=sv('qn'), biz=sv('bp')||'(737) 235-1335';
   const { rows, total, dep, cashDiscAmt, payMethods } = buildLineRows();
   const depAmt = dep>0 ? Math.round(total*dep) : 0;
   const subj=`CHEW ${S.status} ${qnum} — ${addr}`;
