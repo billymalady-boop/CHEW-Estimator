@@ -1910,6 +1910,107 @@ function authAndSendEmail() {
   tc.requestAccessToken({ prompt: 'select_account' });
 }
 
+function saveToTracker() {
+  try {
+    // Build job record from current estimator state
+    const q = S.status || 'QUOTE';
+    const customer = (document.getElementById('cn')?.value || '').trim();
+    const addr = (document.getElementById('ca')?.value || '').trim();
+    const zip = (addr.match(/(\d{5})/) || [])[1] || '';
+    const dist = parseFloat(document.getElementById('dist')?.value) || 0;
+    const total = parseFloat(document.querySelector('#tot-amt')?.textContent?.replace(/[^0-9.]/g,'')) || 0;
+    const quoteNum = (document.getElementById('qnum')?.value || '').trim();
+    const notes = (document.getElementById('jn')?.value || '').trim();
+    const cont = parseFloat(document.getElementById('cont-pct')?.value) || 0;
+
+    // Determine primary job type from active sections
+    let jobType = 'other';
+    if (S.clrOn) jobType = 'clearing';
+    else if (S.debOn) jobType = 'debris';
+    else if (S.grvOn) jobType = 'gravel';
+    else if (S.demOn) jobType = 'demo';
+    else if (S.grdOn) jobType = 'grading';
+
+    // Get attachments from active sections
+    const attachments = [];
+    if (S.clrOn) {
+      const att = document.getElementById('clr-att')?.value;
+      if (att === 'brush') attachments.push('brush');
+      else if (att === 'grapple') attachments.push('grapple');
+      else if (att === 'bucket') attachments.push('bucket');
+    }
+    if (S.debOn) {
+      const att = document.getElementById('deb-att')?.value;
+      if (att) attachments.push(att);
+    }
+    if (S.demOn) { attachments.push('jack'); attachments.push('grapple'); }
+    if (S.grvOn) attachments.push('bucket');
+    if (S.grdOn) {
+      const att = document.getElementById('grd-att')?.value;
+      if (att) attachments.push(att === String(R.trench) ? 'planer' : att === String(R.grapple) ? 'grapple' : 'bucket');
+    }
+
+    // Estimated hours
+    const hrsEst = (S.clrH||0) + (S.debH||0) + (S.demH||0) + (S.grdH||0);
+
+    // Cost breakdown
+    const costMat = S.grvMat || 0;
+    const costDisp = S.debDisp || 0;
+
+    // Subscriber
+    const isSub = document.getElementById('is-subscriber')?.checked || false;
+    const subPlan = document.getElementById('sub-plan')?.value || '';
+
+    const job = {
+      id: Date.now().toString(),
+      date: new Date().toISOString().split('T')[0],
+      customer: customer || 'Unknown Customer',
+      zip,
+      dist,
+      type: jobType,
+      status: 'quote',
+      source: 'google', // default — can update in tracker
+      revenue: total,
+      hrsEst: hrsEst.toFixed(1),
+      hrsAct: '',
+      costMat: costMat.toFixed(0),
+      costDisp: costDisp.toFixed(0),
+      costOther: '',
+      payment: 'unpaid',
+      quoteNum,
+      notes: notes + (isSub ? ` [Clear & Keep - ${subPlan} plan]` : ''),
+      attachments: [...new Set(attachments)],
+      fromEstimator: true,
+    };
+
+    // Load existing tracker jobs and add this one
+    const existing = JSON.parse(localStorage.getItem('chew_jobs') || '[]');
+    // Avoid duplicates — check if same quote number already exists
+    if (quoteNum && existing.some(j => j.quoteNum === quoteNum && j.fromEstimator)) {
+      // Update existing record instead
+      const idx = existing.findIndex(j => j.quoteNum === quoteNum && j.fromEstimator);
+      if (idx >= 0) { existing[idx] = {...existing[idx], ...job, id: existing[idx].id}; }
+    } else {
+      existing.unshift(job);
+    }
+    localStorage.setItem('chew_jobs', JSON.stringify(existing));
+
+    // Show confirmation
+    setTimeout(() => {
+      const statusEl = document.getElementById('email-status');
+      if (statusEl) {
+        const orig = statusEl.textContent;
+        statusEl.textContent = '✓ Saved to Job Tracker';
+        statusEl.style.color = '#2ecc71';
+        setTimeout(() => { statusEl.textContent = orig; statusEl.style.color = ''; }, 2500);
+      }
+    }, 1500);
+
+  } catch(e) {
+    console.error('Tracker save error:', e);
+  }
+}
+
 async function doSendGmail() {
   const { to, subject, body: htmlBody } = buildEmailBody();
   // RFC 2822 with HTML content type
@@ -1936,7 +2037,8 @@ async function doSendGmail() {
     });
     if (res.ok) {
       setEmailStatus('✓ Sent!');
-      alert('✅ Email sent!\n\nTo: ' + to + '\nCC: ' + CHEW_EMAIL);
+      saveToTracker();
+      alert('✅ Email sent!\n\nTo: ' + to + '\nCC: ' + CHEW_EMAIL + '\n\n📋 Quote saved to Job Tracker');
     } else {
       const err = await res.json();
       if (res.status === 401) { gmailToken = null; setEmailStatus('⚠ Session expired — click again'); }

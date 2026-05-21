@@ -788,6 +788,9 @@ body {
   <!-- ── DASHBOARD TAB ── -->
   <div id="pane-dashboard" class="content">
 
+    <!-- Pipeline -->
+    <div id="pipeline-summary"></div>
+
     <!-- KPI Row -->
     <div class="kpi-grid" id="kpi-grid"></div>
 
@@ -1348,6 +1351,17 @@ function saveJob() {
   else if (currentTab === 'insights') renderInsights();
 }
 
+function acceptJob(id) {
+  const jobs = loadJobs();
+  const idx = jobs.findIndex(j => j.id === id);
+  if (idx < 0) return;
+  jobs[idx].status = 'accepted';
+  jobs[idx].acceptedDate = new Date().toISOString().split('T')[0];
+  saveJobs(jobs);
+  renderJobsTable();
+  renderDashboard();
+}
+
 function deleteJob(id) {
   if (!confirm('Delete this job?')) return;
   const jobs = loadJobs().filter(j => j.id !== id);
@@ -1562,6 +1576,25 @@ function renderDashboard() {
       </div>
     `).join('') : '<div style="color:var(--muted);font-size:12px;padding:8px;">No data yet</div>';
 
+  // Pipeline summary
+  const pipeline = [
+    {label:'Quote Sent', status:'quote', color:'var(--yellow)'},
+    {label:'Accepted', status:'accepted', color:'#66cc66'},
+    {label:'In Progress', status:'completed', color:'var(--green)'},
+    {label:'Invoiced', status:'invoiced', color:'#66aaff'},
+    {label:'Paid', status:'paid', color:'var(--green)'},
+  ];
+  const pipelineHtml = pipeline.map(p => {
+    const count = jobs.filter(j=>j.status===p.status).length;
+    const rev = jobs.filter(j=>j.status===p.status).reduce((s,j)=>s+(parseFloat(j.revenue)||0),0);
+    return `<div style="flex:1;background:var(--dark);border:1px solid var(--border);border-radius:4px;padding:12px;text-align:center;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;">${p.label}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:${p.color};line-height:1;">${count}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">${rev>0?fmt(rev):''}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('pipeline-summary').innerHTML = `<div style="display:flex;gap:10px;margin-bottom:16px;">${pipelineHtml}</div>`;
+
   // Recent jobs
   const recent = jobs.slice(0,5);
   document.getElementById('recent-jobs-list').innerHTML = recent.length ?
@@ -1637,6 +1670,7 @@ function renderJobsTable() {
       <td style="font-size:11px;color:var(--muted);">${SOURCES[j.source]||j.source||'—'}</td>
       <td><span class="status-badge s-${j.status}">${j.status||'—'}</span></td>
       <td>
+        ${['estimate','quote'].includes(j.status) ? `<button class="action-btn" style="background:#0a2a0a;color:#2ecc71;border:1px solid #1a4a1a;" onclick="acceptJob('${j.id}')">✓ Accept</button>` : ''}
         <button class="action-btn btn-edit" onclick="openJobModal('${j.id}')">Edit</button>
         <button class="action-btn btn-delete" onclick="deleteJob('${j.id}')">Del</button>
       </td>
