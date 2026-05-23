@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHEW — Work Order</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:#CC2222; --black:#0d0d0d; --dark:#1a1a1a; --mid:#2a2a2a;
+  --border:#333; --muted:#555; --text:#cccccc; --white:#ffffff;
+  --yellow:#F5C400; --green:#2ecc71; --green-dark:#0d2a0d;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;min-height:100vh;}
+
+/* ── PIN ── */
+#pin-screen{position:fixed;inset:0;background:var(--black);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;}
+.pin-logo{font-family:'Barlow Condensed',sans-serif;font-size:64px;font-weight:900;color:var(--red);letter-spacing:4px;margin-bottom:4px;}
+.pin-sub{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:40px;}
+.pin-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);letter-spacing:3px;margin-bottom:12px;}
+.pin-dots{display:flex;gap:12px;margin-bottom:32px;}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);transition:all 0.15s;}
+.pin-dot.filled{background:var(--red);border-color:var(--red);}
+.pin-pad{display:grid;grid-template-columns:repeat(3,64px);gap:10px;}
+.pin-btn{height:56px;background:var(--dark);border:1px solid var(--border);border-radius:4px;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;cursor:pointer;transition:all 0.1s;}
+.pin-btn:hover{background:var(--mid);border-color:var(--red);}
+.pin-btn:active{transform:scale(0.95);background:var(--red);}
+.pin-btn.clear{color:var(--muted);font-size:16px;}
+.pin-btn.zero{grid-column:2;}
+.pin-error{color:var(--red);font-size:12px;letter-spacing:1px;margin-top:16px;height:16px;}
+
+/* ── VIEWS ── */
+#builder-view,#sign-view,#confirm-view{display:none;}
+
+/* ── TOP BAR ── */
+.topbar{background:var(--dark);border-bottom:3px solid var(--red);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+.topbar-logo{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:var(--red);letter-spacing:3px;}
+.topbar-title{font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;}
+.topbar-actions{display:flex;gap:10px;align-items:center;}
+
+/* ── BUTTONS ── */
+.btn{padding:9px 18px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;border:none;transition:all 0.15s;}
+.btn-red{background:var(--red);color:var(--white);}
+.btn-red:hover{background:#991818;}
+.btn-dark{background:var(--mid);color:var(--text);border:1px solid var(--border);}
+.btn-dark:hover{border-color:var(--red);color:var(--white);}
+.btn-green{background:#1a4a1a;color:var(--green);border:1px solid #2a6a2a;}
+.btn-green:hover{background:#254a25;}
+.btn-lg{padding:14px 32px;font-size:16px;}
+
+/* ── CONTENT ── */
+.content{padding:24px;max-width:860px;margin:0 auto;}
+
+/* ── FORM ── */
+.section-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;margin-top:24px;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px;}
+.form-grid.three{grid-template-columns:1fr 1fr 1fr;}
+.form-grid.full{grid-template-columns:1fr;}
+.f{display:flex;flex-direction:column;gap:5px;}
+.f label{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.f input,.f select,.f textarea{background:var(--mid);border:1px solid var(--border);color:var(--white);padding:9px 12px;border-radius:3px;font-size:13px;font-family:'Barlow',sans-serif;transition:border-color 0.15s;}
+.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:var(--red);}
+.f textarea{resize:vertical;min-height:80px;}
+.f select option{background:var(--dark);}
+
+/* ── LINK BOX ── */
+.link-box{background:var(--dark);border:1px solid var(--green);border-radius:4px;padding:16px;margin-top:24px;}
+.link-label{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--green);letter-spacing:2px;margin-bottom:8px;}
+.link-url{font-size:12px;color:var(--text);word-break:break-all;background:var(--mid);padding:10px 12px;border-radius:3px;margin-bottom:10px;font-family:monospace;}
+.link-actions{display:flex;gap:8px;}
+
+/* ── WORK ORDER DISPLAY ── */
+.wo-card{background:var(--dark);border:1px solid var(--border);border-top:4px solid var(--red);border-radius:4px;overflow:hidden;margin-bottom:24px;}
+.wo-header{background:var(--black);padding:20px 24px;border-bottom:1px solid var(--border);}
+.wo-logo{font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:900;color:var(--red);line-height:1;}
+.wo-sub{font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:4px;}
+.wo-contact{font-size:12px;color:var(--muted);margin-top:6px;}
+.wo-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--white);letter-spacing:2px;margin-top:12px;}
+.wo-body{padding:24px;}
+.wo-section{margin-bottom:20px;}
+.wo-section-title{font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--red);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px;}
+.wo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.wo-grid.three{grid-template-columns:1fr 1fr 1fr;}
+.wo-field{background:var(--mid);border-radius:3px;padding:10px 12px;}
+.wo-field-label{font-family:'Barlow Condensed',sans-serif;font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.wo-field-value{font-size:14px;color:var(--white);font-weight:500;}
+.wo-scope{background:var(--mid);border-radius:3px;padding:12px;font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap;}
+.wo-total{background:var(--red);border-radius:3px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:16px;}
+.wo-total-label{font-family:'Barlow Condensed',sans-serif;font-size:14px;color:#ffcccc;letter-spacing:1px;}
+.wo-total-val{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:800;color:var(--yellow);}
+
+/* ── TERMS ── */
+.terms-box{background:var(--black);border:1px solid var(--border);border-radius:3px;padding:14px 16px;margin-bottom:16px;font-size:12px;color:var(--muted);line-height:1.8;}
+.terms-box strong{color:var(--text);}
+
+/* ── SIGN SECTION ── */
+.sign-section{background:var(--dark);border:1px solid var(--border);border-top:3px solid var(--red);border-radius:4px;padding:24px;margin-bottom:24px;}
+.sign-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;}
+.sign-name-input{background:var(--mid);border:2px solid var(--border);color:var(--white);padding:12px 16px;border-radius:3px;font-size:18px;font-family:'Barlow',sans-serif;width:100%;margin-bottom:12px;transition:border-color 0.15s;}
+.sign-name-input:focus{outline:none;border-color:var(--red);}
+.sign-name-input::placeholder{color:var(--muted);font-style:italic;}
+.sign-cb-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;}
+.sign-cb-row input{width:18px;height:18px;accent-color:var(--red);cursor:pointer;flex-shrink:0;margin-top:2px;}
+.sign-cb-text{font-size:12px;color:var(--text);line-height:1.7;}
+.sign-status{font-size:12px;color:var(--muted);margin-top:12px;min-height:18px;}
+
+/* ── CONFIRM VIEW ── */
+.confirm-card{background:var(--dark);border:1px solid var(--green);border-top:4px solid var(--green);border-radius:4px;padding:40px;text-align:center;max-width:600px;margin:60px auto;}
+.confirm-icon{font-size:64px;margin-bottom:16px;}
+.confirm-title{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--green);letter-spacing:2px;margin-bottom:8px;}
+.confirm-sub{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:24px;}
+.confirm-ref{background:var(--mid);border-radius:3px;padding:10px 16px;font-family:monospace;font-size:13px;color:var(--yellow);margin-bottom:24px;}
+
+@media(max-width:640px){
+  .form-grid,.form-grid.three,.wo-grid,.wo-grid.three{grid-template-columns:1fr;}
+  .content{padding:12px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── PIN ── -->
+<div id="pin-screen">
+  <div class="pin-logo">CHEW</div>
+  <div class="pin-sub">Work Order Builder · Restricted</div>
+  <div class="pin-label">Enter PIN</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pinPress('1')">1</button>
+    <button class="pin-btn" onclick="pinPress('2')">2</button>
+    <button class="pin-btn" onclick="pinPress('3')">3</button>
+    <button class="pin-btn" onclick="pinPress('4')">4</button>
+    <button class="pin-btn" onclick="pinPress('5')">5</button>
+    <button class="pin-btn" onclick="pinPress('6')">6</button>
+    <button class="pin-btn" onclick="pinPress('7')">7</button>
+    <button class="pin-btn" onclick="pinPress('8')">8</button>
+    <button class="pin-btn" onclick="pinPress('9')">9</button>
+    <button class="pin-btn clear" onclick="pinClear()">CLR</button>
+    <button class="pin-btn zero" onclick="pinPress('0')">0</button>
+    <button class="pin-btn clear" onclick="pinBack()">⌫</button>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
+</div>
+
+<!-- ── BUILDER VIEW (owner fills in) ── -->
+<div id="builder-view">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="topbar-logo">CHEW</div>
+      <div class="topbar-title">Work Order Builder</div>
+    </div>
+    <div class="topbar-actions">
+      <a href="/CHEW-Estimator/tracker" style="background:var(--mid);border:1px solid var(--border);color:#888;padding:5px 12px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-decoration:none;border-radius:3px;" target="_blank">📊 TRACKER</a>
+      <a href="/CHEW-Estimator" style="background:var(--mid);border:1px solid var(--border);color:#888;padding:5px 12px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-decoration:none;border-radius:3px;" target="_blank">🧮 ESTIMATOR</a>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="section-label">GC / Contractor Info</div>
+    <div class="form-grid">
+      <div class="f"><label>GC / Company Name</label><input type="text" id="b-gc-name" placeholder="Smith Fence Company"></div>
+      <div class="f"><label>GC Contact Name</label><input type="text" id="b-gc-contact" placeholder="John Smith"></div>
+      <div class="f"><label>GC Phone</label><input type="tel" id="b-gc-phone" placeholder="(254) 555-0000"></div>
+      <div class="f"><label>GC Email (for CC confirmation)</label><input type="email" id="b-gc-email" placeholder="john@smithfence.com"></div>
+    </div>
+
+    <div class="section-label">Job Details</div>
+    <div class="form-grid">
+      <div class="f"><label>Job Site Address</label><input type="text" id="b-address" placeholder="123 Ranch Road, Gatesville TX"></div>
+      <div class="f"><label>Job Site Zip Code</label><input type="text" id="b-zip" placeholder="76528" maxlength="5"></div>
+      <div class="f"><label>Scheduled Start Date</label><input type="date" id="b-start"></div>
+      <div class="f"><label>Estimated Duration</label><input type="text" id="b-duration" placeholder="e.g. 1 day, 3 days, 2 weeks"></div>
+    </div>
+
+    <div class="form-grid full" style="margin-top:14px;">
+      <div class="f"><label>Scope of Work</label>
+        <textarea id="b-scope" placeholder="Describe exactly what CHEW will do — equipment, area, tasks, any exclusions..."></textarea>
+      </div>
+    </div>
+
+    <div class="section-label">Pricing</div>
+    <div class="form-grid three">
+      <div class="f"><label>Hourly Rate ($/hr)</label><input type="number" id="b-rate" value="125" min="0" step="1" oninput="calcTotal()"></div>
+      <div class="f"><label>Estimated Hours</label><input type="number" id="b-hours" placeholder="0" min="0" step="0.5" oninput="calcTotal()"></div>
+      <div class="f"><label>Estimated Total</label><input type="text" id="b-total" placeholder="Auto-calculated" readonly style="color:var(--yellow);font-weight:700;"></div>
+    </div>
+
+    <div class="form-grid" style="margin-top:14px;">
+      <div class="f"><label>Attachments to Be Used</label>
+        <input type="text" id="b-attachments" placeholder="e.g. Brush Hog, Grapple">
+      </div>
+      <div class="f"><label>Work Order # (auto-generated if blank)</label>
+        <input type="text" id="b-wo-num" placeholder="Auto: CHEW-WO-XXXXX">
+      </div>
+    </div>
+
+    <div class="form-grid full" style="margin-top:14px;">
+      <div class="f"><label>Special Terms / Notes (optional)</label>
+        <input type="text" id="b-notes" placeholder="e.g. Fuel surcharge applies after day 3 · Disposal billed separately">
+      </div>
+    </div>
+
+    <div style="margin-top:24px;display:flex;gap:12px;">
+      <button class="btn btn-red btn-lg" onclick="generateLink()">⚡ Generate Shareable Link</button>
+      <button class="btn btn-dark" onclick="previewWO()">👁 Preview</button>
+    </div>
+
+    <div id="link-box" style="display:none;" class="link-box">
+      <div class="link-label">✓ SHAREABLE LINK GENERATED — Send this to the GC</div>
+      <div class="link-url" id="link-url"></div>
+      <div class="link-actions">
+        <button class="btn btn-green" onclick="copyLink()">📋 Copy Link</button>
+        <button class="btn btn-dark" onclick="openLink()">🔗 Open Preview</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;">GC opens this link, reviews the work order, types their name, and hits Sign & Submit. You get notified by email and a copy saves to Google Drive.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SIGN VIEW (GC sees this) ── -->
+<div id="sign-view">
+  <div style="background:var(--dark);border-bottom:3px solid var(--red);padding:12px 24px;display:flex;align-items:center;gap:16px;">
+    <div class="topbar-logo" style="font-size:24px;">CHEW</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--muted);letter-spacing:2px;">SUBCONTRACTOR WORK ORDER</div>
+  </div>
+
+  <div class="content" style="max-width:760px;">
+    <!-- Work order display card -->
+    <div class="wo-card">
+      <div class="wo-header">
+        <div class="wo-logo">CHEW</div>
+        <div class="wo-sub">Clearing · Hauling · Earthwork · Waste Removal</div>
+        <div class="wo-contact">737-235-1335  ·  chew.earthworks@gmail.com  ·  Copperas Cove TX 76522</div>
+        <div class="wo-title">SUBCONTRACTOR WORK ORDER</div>
+      </div>
+      <div class="wo-body">
+        <div class="wo-section">
+          <div class="wo-section-title">Work Order Reference</div>
+          <div class="wo-grid three">
+            <div class="wo-field"><div class="wo-field-label">Work Order #</div><div class="wo-field-value" id="s-wo-num">—</div></div>
+            <div class="wo-field"><div class="wo-field-label">Date Issued</div><div class="wo-field-value" id="s-date">—</div></div>
+            <div class="wo-field"><div class="wo-field-label">Valid For</div><div class="wo-field-value">14 Days</div></div>
+          </div>
+        </div>
+        <div class="wo-section">
+          <div class="wo-section-title">Contractor (GC) Information</div>
+          <div class="wo-grid">
+            <div class="wo-field"><div class="wo-field-label">Company / GC Name</div><div class="wo-field-value" id="s-gc-name">—</div></div>
+            <div class="wo-field"><div class="wo-field-label">Contact Name</div><div class="wo-field-value" id="s-gc-contact">—</div></div>
+            <div class="wo-field"><div class="wo-field-label">GC Phone</div><div class="wo-field-value" id="s-gc-phone">—</div></div>
+            <div class="wo-field"><div class="wo-field-label">GC Email</div><div class="wo-field-value" id="s-gc-email">—</div></div>
+          </div>
+        </div>
+        <div class="wo-section">
+          <div class="wo-section-title">Job Site</div>
+          <div class="wo-grid three">
+            <div class="wo-field" style="grid-column:span 2"><div class="wo-field-label">Address</div><div class="wo-field-value" id="s-address">—</div></div>
+            <div class="wo-field"><div class="wo-field-label">Zip Code</div><div class="wo-field-value" id="s-zip">—</div></div>
+            <div class="wo-field"><div class="wo-field-label">Start Date</div><div class="wo-field-value" id="s-start">—</div></div>
+            <div class="wo-field"><div class="wo-field-label">Est. Duration</div><div class="wo-field-value" id="s-duration">—</div></div>
+            <div class="wo-field"><div class="wo-field-label">Attachments</div><div class="wo-field-value" id="s-attachments">—</div></div>
+          </div>
+        </div>
+        <div class="wo-section">
+          <div class="wo-section-title">Scope of Work</div>
+          <div class="wo-scope" id="s-scope">—</div>
+        </div>
+        <div class="wo-section">
+          <div class="wo-section-title">Pricing</div>
+          <div class="wo-grid three">
+            <div class="wo-field"><div class="wo-field-label">Hourly Rate</div><div class="wo-field-value" id="s-rate">—</div></div>
+            <div class="wo-field"><div class="wo-field-label">Est. Hours</div><div class="wo-field-value" id="s-hours">—</div></div>
+            <div class="wo-field"><div class="wo-field-label">Payment Terms</div><div class="wo-field-value">Net-30</div></div>
+          </div>
+          <div class="wo-total">
+            <div class="wo-total-label">ESTIMATED TOTAL</div>
+            <div class="wo-total-val" id="s-total">—</div>
+          </div>
+          <div id="s-notes" style="font-size:12px;color:var(--muted);margin-top:8px;font-style:italic;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Terms -->
+    <div class="terms-box">
+      <strong>Standard Terms:</strong> Payment due Net-30 from invoice date. Invoice issued same day job is completed.
+      Fuel included for engagements under 3 consecutive days — surcharge applies beyond 3 days, agreed in advance.
+      Cancellations require 24-hour notice — less than 24 hours billed at 2-hour minimum.
+      Disposal and haul-off billed separately at standard CHEW rates.
+      Any scope changes require written authorization before proceeding.
+      CHEW carries GL insurance and inland marine — Certificate of Insurance available on request.
+    </div>
+
+    <!-- Sign section -->
+    <div class="sign-section">
+      <div class="sign-title">Sign & Accept This Work Order</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+        Review the work order above. Type your full name below and check the box to accept. Both parties will receive a confirmation email with a timestamped copy.
+      </div>
+      <div class="f" style="margin-bottom:12px;">
+        <label style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);letter-spacing:2px;">YOUR FULL NAME — TYPED SIGNATURE</label>
+        <input type="text" class="sign-name-input" id="sign-name" placeholder="Type your full legal name to sign...">
+      </div>
+      <div class="sign-cb-row">
+        <input type="checkbox" id="sign-cb">
+        <div class="sign-cb-text">
+          I have read and agree to the scope of work, pricing, and terms stated in this work order.
+          I understand this constitutes a binding agreement between my company and CHEW — Central Texas Site Services.
+          By typing my name above and checking this box, I am electronically signing this work order.
+        </div>
+      </div>
+      <button class="btn btn-red btn-lg" onclick="submitSignature()" style="width:100%;">✓ Sign & Submit Work Order</button>
+      <div class="sign-status" id="sign-status"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIRM VIEW ── -->
+<div id="confirm-view">
+  <div class="confirm-card">
+    <div class="confirm-icon">✅</div>
+    <div class="confirm-title">Work Order Accepted</div>
+    <div class="confirm-sub">
+      Your signature has been recorded. CHEW — Central Texas Site Services has been notified and a confirmation email has been sent to both parties.<br><br>
+      <strong style="color:var(--white);">Reference number:</strong>
+    </div>
+    <div class="confirm-ref" id="confirm-ref">—</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:24px;">CHEW will contact you within 24 hours to confirm the start date and any final details. Questions? Call or text <strong style="color:var(--white);">737-235-1335</strong></div>
+    <div style="font-size:12px;color:var(--muted);">CHEW — Central Texas Site Services · Copperas Cove TX · chew.earthworks@gmail.com</div>
+  </div>
+</div>
+
+<script>
+const PIN = '1411';
+const CHEW_EMAIL = 'chew.earthworks@gmail.com';
+const GMAIL_CLIENT_ID = '101447197493-84n5v7oo2gkrequo426os4ovfi9b71bb.apps.googleusercontent.com';
+let gmailToken = null;
+let driveToken = null;
+
+// ── PIN ──
+let pinVal = '';
+function pinPress(n){if(pinVal.length>=4)return;pinVal+=n;updateDots();if(pinVal.length===4)checkPin();}
+function pinBack(){pinVal=pinVal.slice(0,-1);updateDots();}
+function pinClear(){pinVal='';updateDots();document.getElementById('pin-error').textContent='';}
+function updateDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('filled',i<pinVal.length);}
+function checkPin(){
+  if(pinVal===PIN){
+    document.getElementById('pin-screen').style.display='none';
+    // Check if we're in sign mode (URL has data param)
+    const params=new URLSearchParams(window.location.search);
+    if(params.has('d')){showSignView(params.get('d'));}
+    else{document.getElementById('builder-view').style.display='block';}
+  } else {
+    document.getElementById('pin-error').textContent='Incorrect PIN';
+    pinVal='';updateDots();
+    setTimeout(()=>document.getElementById('pin-error').textContent='',1500);
+  }
+}
+
+// Check URL on load — if ?d= param exists, go straight to sign view (no PIN for GC)
+window.addEventListener('load',()=>{
+  const params=new URLSearchParams(window.location.search);
+  if(params.has('d')){
+    // GC sign view — no PIN needed
+    document.getElementById('pin-screen').style.display='none';
+    showSignView(params.get('d'));
+  }
+  // If ?preview=1 also skip PIN for preview
+  if(params.has('preview')){
+    document.getElementById('pin-screen').style.display='none';
+    showSignView(params.get('d'));
+  }
+});
+
+// ── CALC TOTAL ──
+function calcTotal(){
+  const r=parseFloat(document.getElementById('b-rate').value)||0;
+  const h=parseFloat(document.getElementById('b-hours').value)||0;
+  const t=r*h;
+  document.getElementById('b-total').value=t>0?'$'+t.toLocaleString():'';
+}
+
+// ── GENERATE LINK ──
+function generateLink(){
+  const gcName=document.getElementById('b-gc-name').value.trim();
+  const gcContact=document.getElementById('b-gc-contact').value.trim();
+  const gcPhone=document.getElementById('b-gc-phone').value.trim();
+  const gcEmail=document.getElementById('b-gc-email').value.trim();
+  const address=document.getElementById('b-address').value.trim();
+  const zip=document.getElementById('b-zip').value.trim();
+  const start=document.getElementById('b-start').value;
+  const duration=document.getElementById('b-duration').value.trim();
+  const scope=document.getElementById('b-scope').value.trim();
+  const rate=document.getElementById('b-rate').value||'125';
+  const hours=document.getElementById('b-hours').value||'0';
+  const attachments=document.getElementById('b-attachments').value.trim();
+  const notes=document.getElementById('b-notes').value.trim();
+  let woNum=document.getElementById('b-wo-num').value.trim();
+
+  if(!gcName){alert('GC/Company name is required');return;}
+  if(!scope){alert('Scope of work is required');return;}
+
+  if(!woNum){
+    woNum='CHEW-WO-'+Date.now().toString().slice(-5);
+    document.getElementById('b-wo-num').value=woNum;
+  }
+
+  const data={
+    woNum,gcName,gcContact,gcPhone,gcEmail,
+    address,zip,start,duration,scope,
+    rate,hours,attachments,notes,
+    issued:new Date().toISOString().split('T')[0]
+  };
+
+  const encoded=btoa(encodeURIComponent(JSON.stringify(data)));
+  const url=window.location.origin+window.location.pathname+'?d='+encoded;
+
+  document.getElementById('link-url').textContent=url;
+  document.getElementById('link-box').style.display='block';
+  window._generatedUrl=url;
+  window._woData=data;
+}
+
+function copyLink(){
+  const url=document.getElementById('link-url').textContent;
+  navigator.clipboard.writeText(url).then(()=>{
+    const btn=event.target;
+    btn.textContent='✓ Copied!';
+    setTimeout(()=>btn.textContent='📋 Copy Link',2000);
+  });
+}
+
+function openLink(){window.open(window._generatedUrl,'_blank');}
+
+function previewWO(){
+  if(!window._woData){generateLink();}
+  if(window._woData){
+    const encoded=btoa(encodeURIComponent(JSON.stringify(window._woData)));
+    window.open(window.location.origin+window.location.pathname+'?d='+encoded,'_blank');
+  }
+}
+
+// ── SIGN VIEW ──
+function showSignView(encoded){
+  try{
+    const data=JSON.parse(decodeURIComponent(atob(encoded)));
+    window._woData=data;
+
+    // Populate fields
+    const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val||'—';};
+    set('s-wo-num',data.woNum);
+    set('s-date',data.issued);
+    set('s-gc-name',data.gcName);
+    set('s-gc-contact',data.gcContact);
+    set('s-gc-phone',data.gcPhone);
+    set('s-gc-email',data.gcEmail);
+    set('s-address',data.address);
+    set('s-zip',data.zip);
+    set('s-start',data.start);
+    set('s-duration',data.duration);
+    set('s-attachments',data.attachments||'Standard CHEW attachments');
+    set('s-scope',data.scope);
+    set('s-rate','$'+parseFloat(data.rate||125).toFixed(2)+'/hr');
+    set('s-hours',parseFloat(data.hours||0).toFixed(1)+' hrs');
+    const total=(parseFloat(data.rate||125)*parseFloat(data.hours||0));
+    set('s-total',total>0?'$'+total.toLocaleString():'To be confirmed');
+    const notesEl=document.getElementById('s-notes');
+    if(notesEl&&data.notes)notesEl.textContent=data.notes;
+
+    document.getElementById('sign-view').style.display='block';
+  }catch(e){
+    document.getElementById('sign-view').innerHTML='<div style="padding:40px;text-align:center;color:#CC2222;">Invalid or expired work order link.</div>';
+    document.getElementById('sign-view').style.display='block';
+  }
+}
+
+// ── SUBMIT SIGNATURE ──
+async function submitSignature(){
+  const name=document.getElementById('sign-name').value.trim();
+  const cb=document.getElementById('sign-cb').checked;
+  const status=document.getElementById('sign-status');
+
+  if(!name){status.style.color='#CC2222';status.textContent='Please type your full name to sign.';return;}
+  if(!cb){status.style.color='#CC2222';status.textContent='Please check the acceptance box to continue.';return;}
+
+  status.style.color='var(--muted)';
+  status.textContent='Sending confirmation emails...';
+
+  const data=window._woData;
+  const timestamp=new Date().toLocaleString('en-US',{timeZone:'America/Chicago',dateStyle:'full',timeStyle:'short'});
+  const signedData={...data,signedBy:name,signedAt:timestamp};
+
+  // Build email HTML
+  const emailHtml=buildConfirmationEmail(signedData);
+
+  try{
+    await authAndSend(async(token)=>{
+      // Send to CHEW
+      await sendEmail(token,CHEW_EMAIL,null,
+        `✓ Work Order Signed — ${data.woNum} — ${data.gcName}`,emailHtml);
+      // CC the GC if email provided
+      if(data.gcEmail){
+        await sendEmail(token,data.gcEmail,null,
+          `Work Order Accepted — ${data.woNum} — CHEW Central Texas Site Services`,emailHtml);
+      }
+      // Save to Drive
+      await saveToDrive(token,signedData,emailHtml);
+    });
+
+    document.getElementById('sign-view').style.display='none';
+    document.getElementById('confirm-ref').textContent=data.woNum+' — '+timestamp;
+    document.getElementById('confirm-view').style.display='block';
+  }catch(e){
+    status.style.color='#CC2222';
+    status.textContent='Error sending — please try again or call 737-235-1335';
+    console.error(e);
+  }
+}
+
+// ── BUILD EMAIL HTML ──
+function buildConfirmationEmail(d){
+  const total=parseFloat(d.rate||125)*parseFloat(d.hours||0);
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#0d0d0d;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;padding:24px 0;">
+<tr><td align="center">
+<table width="620" cellpadding="0" cellspacing="0" style="background:#1a1a1a;border-top:4px solid #CC2222;border-radius:4px;overflow:hidden;">
+  <tr><td style="padding:20px 28px;background:#111;border-bottom:1px solid #2a2a2a;">
+    <span style="font-family:Arial,sans-serif;font-size:36px;font-weight:900;color:#CC2222;letter-spacing:3px;">CHEW</span>
+    <span style="font-size:12px;color:#555;margin-left:12px;letter-spacing:2px;">CLEARING · HAULING · EARTHWORK · WASTE REMOVAL</span>
+    <div style="font-size:12px;color:#555;margin-top:4px;">737-235-1335  ·  chew.earthworks@gmail.com  ·  Copperas Cove TX</div>
+    <div style="font-size:18px;font-weight:700;color:#ffffff;margin-top:12px;letter-spacing:1px;">SUBCONTRACTOR WORK ORDER — SIGNED</div>
+  </td></tr>
+  <tr><td style="padding:0 28px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">
+      <tr>
+        <td style="padding:8px 12px;background:#111;border:1px solid #2a2a2a;font-size:11px;color:#888;letter-spacing:1px;">WORK ORDER #</td>
+        <td style="padding:8px 12px;background:#111;border:1px solid #2a2a2a;font-size:11px;color:#888;letter-spacing:1px;">DATE ISSUED</td>
+        <td style="padding:8px 12px;background:#111;border:1px solid #2a2a2a;font-size:11px;color:#888;letter-spacing:1px;">SIGNED AT</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 12px;background:#1a1a1a;border:1px solid #2a2a2a;font-size:14px;color:#fff;font-weight:700;">${d.woNum}</td>
+        <td style="padding:10px 12px;background:#1a1a1a;border:1px solid #2a2a2a;font-size:14px;color:#fff;">${d.issued}</td>
+        <td style="padding:10px 12px;background:#1a1a1a;border:1px solid #2a2a2a;font-size:14px;color:#2ecc71;">${d.signedAt}</td>
+      </tr>
+    </table>
+    <div style="font-size:10px;color:#CC2222;letter-spacing:2px;margin-bottom:8px;border-bottom:1px solid #2a2a2a;padding-bottom:4px;">SIGNED BY</div>
+    <div style="background:#0a2a0a;border:1px solid #1a4a1a;border-radius:3px;padding:12px 16px;margin-bottom:16px;">
+      <div style="font-size:18px;font-weight:700;color:#2ecc71;">${d.signedBy}</div>
+      <div style="font-size:11px;color:#888;margin-top:4px;">${d.gcName} — ${d.gcContact||''} — ${d.gcPhone||''}</div>
+    </div>
+    <div style="font-size:10px;color:#CC2222;letter-spacing:2px;margin-bottom:8px;border-bottom:1px solid #2a2a2a;padding-bottom:4px;">JOB SITE</div>
+    <div style="background:#111;border:1px solid #2a2a2a;border-radius:3px;padding:12px;margin-bottom:16px;font-size:13px;color:#ccc;">${d.address} ${d.zip} · Start: ${d.start} · Duration: ${d.duration}</div>
+    <div style="font-size:10px;color:#CC2222;letter-spacing:2px;margin-bottom:8px;border-bottom:1px solid #2a2a2a;padding-bottom:4px;">SCOPE OF WORK</div>
+    <div style="background:#111;border:1px solid #2a2a2a;border-radius:3px;padding:12px;margin-bottom:16px;font-size:13px;color:#ccc;white-space:pre-wrap;">${d.scope}</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+      <tr>
+        <td style="padding:10px 12px;background:#CC2222;font-size:14px;color:#ffcccc;font-weight:700;width:50%;">RATE: $${parseFloat(d.rate||125).toFixed(2)}/hr × ${parseFloat(d.hours||0).toFixed(1)} hrs</td>
+        <td style="padding:10px 16px;background:#CC2222;font-size:22px;color:#F5C400;font-weight:900;text-align:right;">${total>0?'$'+total.toLocaleString():'TBC'}</td>
+      </tr>
+    </table>
+    ${d.notes?`<div style="font-size:11px;color:#555;margin-bottom:16px;font-style:italic;">${d.notes}</div>`:''}
+    <div style="font-size:11px;color:#555;background:#111;padding:10px 12px;border-radius:3px;margin-bottom:16px;">
+      Payment: Net-30 from invoice date · Invoice issued same day job is completed · COI available on request
+    </div>
+  </td></tr>
+  <tr><td style="padding:14px 28px;background:#0d0d0d;border-top:3px solid #CC2222;text-align:center;">
+    <div style="font-size:10px;color:#444;letter-spacing:2px;">CHEW · CLEARING · HAULING · EARTHWORK · WASTE REMOVAL · CENTRAL TEXAS SITE SERVICES</div>
+  </td></tr>
+</table>
+</td></tr>
+</table></body></html>`;
+}
+
+// ── GMAIL AUTH ──
+async function authAndSend(callback){
+  return new Promise((resolve,reject)=>{
+    if(!window.google){
+      const script=document.createElement('script');
+      script.src='https://accounts.google.com/gsi/client';
+      script.onload=()=>doAuth(callback,resolve,reject);
+      script.onerror=()=>reject(new Error('Failed to load Google auth'));
+      document.head.appendChild(script);
+    } else {
+      doAuth(callback,resolve,reject);
+    }
+  });
+}
+
+function doAuth(callback,resolve,reject){
+  const tc=google.accounts.oauth2.initTokenClient({
+    client_id:GMAIL_CLIENT_ID,
+    scope:'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/drive.file',
+    login_hint:CHEW_EMAIL,
+    callback:async(r)=>{
+      if(r.error){reject(new Error(r.error));return;}
+      gmailToken=r.access_token;
+      try{await callback(r.access_token);resolve();}
+      catch(e){reject(e);}
+    }
+  });
+  tc.requestAccessToken({prompt:'select_account'});
+}
+
+// ── SEND EMAIL ──
+async function sendEmail(token,to,cc,subject,html){
+  const headers=['Content-Type: text/html; charset=utf-8',`To: ${to}`,`From: CHEW Central Texas <${CHEW_EMAIL}>`,`Subject: ${subject}`];
+  if(cc)headers.push(`Cc: ${cc}`);
+  const raw=headers.join('\r\n')+'\r\n\r\n'+html;
+  const encoded=btoa(unescape(encodeURIComponent(raw))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const res=await fetch('https://www.googleapis.com/gmail/v1/users/me/messages/send',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({raw:encoded})
+  });
+  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'Send failed');}
+}
+
+// ── SAVE TO DRIVE ──
+async function saveToDrive(token,d,html){
+  try{
+    // Find or create CHEW Work Orders folder
+    let folderId=await findOrCreateFolder(token,'CHEW Work Orders');
+
+    // Save HTML file
+    const fileName=`${d.woNum} — ${d.gcName} — ${d.signedAt.replace(/[/:]/g,'-')}.html`;
+    const blob=new Blob([html],{type:'text/html'});
+    const metadata={name:fileName,parents:[folderId],mimeType:'text/html'};
+    const form=new FormData();
+    form.append('metadata',new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+    form.append('file',blob);
+
+    await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token},
+      body:form
+    });
+  }catch(e){
+    console.error('Drive save error:',e);
+    // Don't throw — emails already sent, Drive save failure is non-critical
+  }
+}
+
+async function findOrCreateFolder(token,name){
+  // Search for existing folder
+  const search=await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,{
+    headers:{'Authorization':'Bearer '+token}
+  });
+  const data=await search.json();
+  if(data.files&&data.files.length>0)return data.files[0].id;
+
+  // Create folder
+  const create=await fetch('https://www.googleapis.com/drive/v3/files',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({name,mimeType:'application/vnd.google-apps.folder'})
+  });
+  const folder=await create.json();
+  return folder.id;
+}
+</script>
+</body>
+</html>
