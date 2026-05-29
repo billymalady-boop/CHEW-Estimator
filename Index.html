@@ -744,20 +744,6 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
           <input type="hidden" id="deb-res-fill" value="12.44">
         </div>
       </div>
-      <div style="margin-top:10px;background:#0d1410;border:1px solid #1a3a1a;padding:11px 14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-          <div>
-            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:#F5C400;letter-spacing:1px;">📷 PHOTO LOAD GUT-CHECK <span style="background:#333;color:#888;font-size:9px;letter-spacing:1px;padding:2px 6px;border-radius:2px;">OWNER TOOL</span></div>
-            <div style="font-size:10px;color:#6a7a6a;margin-top:2px;">Snap the pile on a site visit · AI gives a CY range &amp; auto-fills the midpoint · ALWAYS confirm — photos hide depth &amp; packing</div>
-          </div>
-          <label class="rb" style="flex:0 0 auto;background:var(--red);color:#fff;border-color:var(--red);cursor:pointer;">
-            CHOOSE PHOTO
-            <input type="file" id="deb-photo" accept="image/*" style="display:none;" onchange="estimateLoadFromPhoto(this)">
-          </label>
-        </div>
-        <div id="deb-photo-status" style="font-size:11px;color:#888;margin-top:8px;display:none;"></div>
-        <div id="deb-photo-result" style="display:none;margin-top:8px;background:#0a0a0a;border:1px solid #2a2a2a;padding:9px 12px;font-size:11px;color:#cfcfcf;line-height:1.5;"></div>
-      </div>
       <div class="g3" style="margin-top:8px">
         <div><div class="cl">CY &times; $65/cy</div><div class="cv sm" id="deb-res-calc">&#8212;</div></div>
         <div><div class="cl">$249 Min Applied?</div><div class="cv sm" id="deb-res-min">&#8212;</div></div>
@@ -2669,73 +2655,6 @@ function calcDebRes() {
   if (rsEl) rsEl.textContent = cy > 0 ? fmt(sub) + (noMachine ? ' · No equip charge' : '') : '—';
   updAmt('deb', S.deb, S.debOn, cy > 0 ? cy.toFixed(1) + ' cy' : '');
   calcTot();
-}
-
-// ── PHOTO LOAD GUT-CHECK (owner tool) ──
-async function estimateLoadFromPhoto(input) {
-  const file = input.files && input.files[0];
-  if (!file) return;
-  const statusEl = $('deb-photo-status');
-  const resultEl = $('deb-photo-result');
-  statusEl.style.display = 'block';
-  statusEl.style.color = '#888';
-  statusEl.textContent = '⏳ Reading photo…';
-  resultEl.style.display = 'none';
-  try {
-    const b64 = await new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload = () => res(r.result.split(',')[1]);
-      r.onerror = () => rej(new Error('read failed'));
-      r.readAsDataURL(file);
-    });
-    const mt = file.type || 'image/jpeg';
-    statusEl.textContent = '⏳ Estimating load size…';
-    const prompt = "You are a junk-removal load estimator for a 7x14 dump trailer (standard 3ft walls = 12.44 cubic yards full, 4ft extended walls = 16.59 cy). Look at this photo of a debris/junk pile and estimate the loose volume in cubic yards it would occupy in the trailer. Account for air gaps and how bulky items pack. Be realistic — do NOT undercount; piles compress less and hide depth. Respond with ONLY a JSON object, no markdown, no other text: {\"low_cy\": number, \"high_cy\": number, \"confidence\": \"low\"|\"medium\"|\"high\", \"note\": \"one short sentence on what you see and any blind spots\"}";
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mt, data: b64 } },
-            { type: 'text', text: prompt }
-          ]
-        }]
-      })
-    });
-    const data = await response.json();
-    const text = (data.content || []).filter(i => i.type === 'text').map(i => i.text).join('').replace(/```json|```/g, '').trim();
-    let parsed;
-    try { parsed = JSON.parse(text); } catch (e) { parsed = null; }
-    if (!parsed || typeof parsed.low_cy !== 'number' || typeof parsed.high_cy !== 'number') {
-      statusEl.style.color = '#cc8833';
-      statusEl.textContent = '⚠ Could not read a clear estimate — enter CY manually.';
-      return;
-    }
-    const lo = Math.round(parsed.low_cy * 4) / 4;
-    const hi = Math.round(parsed.high_cy * 4) / 4;
-    const mid = Math.round(((lo + hi) / 2) * 4) / 4;
-    // Auto-fill the midpoint (overridable)
-    if ($('deb-cy')) { $('deb-cy').value = mid; calcDebRes(); }
-    // Clear any active fill-button highlight since this is a custom value
-    document.querySelectorAll('#deb-res-section .rb').forEach(b => b.classList.remove('on'));
-    statusEl.style.display = 'none';
-    const conf = (parsed.confidence || 'medium').toLowerCase();
-    const confColor = conf === 'high' ? '#2ecc71' : (conf === 'low' ? '#cc8833' : '#F5C400');
-    resultEl.style.display = 'block';
-    resultEl.innerHTML =
-      '<div style="font-family:\'Barlow Condensed\',sans-serif;font-weight:700;letter-spacing:1px;color:#F5C400;">RANGE: ' + lo.toFixed(2) + '–' + hi.toFixed(2) + ' CY · MIDPOINT ' + mid.toFixed(2) + ' CY AUTO-FILLED</div>' +
-      '<div style="margin-top:3px;">Confidence: <b style="color:' + confColor + '">' + conf.toUpperCase() + '</b> · ' + (parsed.note ? parsed.note.replace(/</g,'&lt;') : '') + '</div>' +
-      '<div style="margin-top:5px;color:#888;font-style:italic;">This is a starting point — confirm against what you actually see on site before quoting.</div>';
-  } catch (err) {
-    statusEl.style.color = '#cc8833';
-    statusEl.textContent = '⚠ Photo estimate failed (' + (err.message || 'network') + '). Enter CY manually.';
-  } finally {
-    input.value = '';
-  }
 }
 
 // ── RUN-RATE & FLOOR CALCULATOR (owner tool) ──
