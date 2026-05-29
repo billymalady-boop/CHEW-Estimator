@@ -1581,8 +1581,14 @@ function calcTot(){
   const base=S.mob+S.clr+S.grv+S.deb+S.dem+S.grd+S.trn+S.rnt+surTotal;
   const contAmt=base*cont;
   let total=base+contAmt;
-  const minHit=total>0&&total<400;
-  if(minHit)total=400;
+  // Dynamic job floor: $249 when residential debris is the ONLY active section
+  // (truck-only job, no machine on the trailer). $400 otherwise — anything with
+  // the machine (clearing, demo, grading, trenching, rental) or gravel hauling
+  // carries the full mobilization + equipment exposure.
+  const debOnly=S.debOn&&!S.clrOn&&!S.grvOn&&!S.demOn&&!S.grdOn&&!S.trnOn&&!S.rntOn;
+  const jobFloor=debOnly?249:400;
+  const minHit=total>0&&total<jobFloor;
+  if(minHit)total=jobFloor;
   // Apply subscriber discount first
   const subDiscAmt=subDiscPct>0?Math.round(total*subDiscPct):0;
   total=total-subDiscAmt;
@@ -1600,6 +1606,7 @@ function calcTot(){
   const cdEl=$('r-cash-disc');
   if(cdEl){if(cashDiscAmt>0){cdEl.textContent='-'+fmt(cashDiscAmt)+' ('+sv('cash-disc')+'% cash)';cdEl.classList.remove('z');}else{cdEl.textContent='—';cdEl.classList.add('z');}}
   $('r-min').classList.toggle('show',minHit);
+  if(minHit)$('r-min').textContent='⚠ Min '+fmt(jobFloor)+' applied'+(debOnly?' (debris-only)':'');
   // Scale reconciliation
   const scaleW=fv('scale-actual');
   if(scaleW>0){
