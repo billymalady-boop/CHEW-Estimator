@@ -714,8 +714,17 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
         <div><div class="cl">$249 Min Applied?</div><div class="cv sm" id="deb-res-min">&#8212;</div></div>
         <div><div class="cl">Residential Subtotal</div><div class="cv" id="deb-res-sub">&#8212;</div></div>
       </div>
+      <div style="margin-top:10px;display:flex;align-items:flex-start;gap:10px;background:#0d1a0d;border:1px solid #1a3a1a;padding:10px 14px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;width:100%;">
+          <input type="checkbox" id="res-no-machine" checked onchange="calcDebRes()" style="width:16px;height:16px;accent-color:#2ecc71;cursor:pointer;flex-shrink:0;">
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;color:#2ecc71;letter-spacing:1px;">No machine loading — hand load only</div>
+            <div style="font-size:10px;color:#3a5a3a;margin-top:2px;">Check = $65/cy flat, no equipment charge · Uncheck if machine assist needed (switch to Tonnage mode)</div>
+          </div>
+        </label>
+      </div>
       <div class="info" style="margin-top:8px;background:#0d1a0d;border-color:#1a3a1a;color:#2ecc71;font-size:11px;">
-        &#10003; Dump fees baked into $65/cy rate &middot; $249 floor protects minimum job profitability
+        &#10003; Dump fees baked into $65/cy rate &middot; $249 floor protects minimum job profitability &middot; No equipment charge applied
       </div>
     </div>
     <!-- TONNAGE SECTION (hidden by default) -->
@@ -2546,19 +2555,21 @@ function setResF(cy, el) {
 function calcDebRes() {
   if (!S.debOn) { S.deb = 0; S.debDisp = 0; S.debH = 0; updAmt('deb', 0, false, ''); calcTot(); return; }
   if (sv('deb-mode') !== 'residential') return;
+  const noMachine = $('res-no-machine') ? $('res-no-machine').checked : true;
   const cy = parseFloat($('deb-cy') && $('deb-cy').value) || 0;
   const raw = cy * 65;
   const sub = cy > 0 ? Math.max(249, raw) : 0;
   const minApplied = cy > 0 && raw < 249;
+  // No machine charge in residential hand-load mode
   S.deb = sub;
-  S.debDisp = 0;
-  S.debH = 0;
+  S.debDisp = 0; // dump fees baked into $65/cy
+  S.debH = 0;    // no machine hours — hand load only
   const rcEl = $('deb-res-calc');
   const rmEl = $('deb-res-min');
   const rsEl = $('deb-res-sub');
   if (rcEl) rcEl.textContent = cy > 0 ? fmt(raw) + ' (' + cy.toFixed(2) + ' cy x $65)' : '—';
   if (rmEl) rmEl.textContent = minApplied ? '⚠ $249 min applied' : (cy > 0 ? '✓ Above min' : '—');
-  if (rsEl) rsEl.textContent = cy > 0 ? fmt(sub) : '—';
+  if (rsEl) rsEl.textContent = cy > 0 ? fmt(sub) + (noMachine ? ' · No equip charge' : '') : '—';
   updAmt('deb', S.deb, S.debOn, cy > 0 ? cy.toFixed(1) + ' cy' : '');
   calcTot();
 }
