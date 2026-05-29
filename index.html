@@ -682,6 +682,15 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
     <div class="pamt z" id="a-deb">—</div>
   </div>
   <div class="pb" id="b-deb">
+    <!-- WALL HEIGHT SELECTOR -->
+    <div style="background:#1a1a0a;border:1px solid #3a3a1a;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;color:var(--yellow);">TRAILER WALL HEIGHT</div>
+      <div class="rg" style="margin:0;flex:1;min-width:200px;">
+        <div class="rb on" id="wall-std" onclick="setWallHeight('std',this)">Standard 3ft &mdash; 12.4 cy / 336 cf</div>
+        <div class="rb" id="wall-ext" onclick="setWallHeight('ext',this)">Extended 4ft &mdash; 16.6 cy / 448 cf</div>
+      </div>
+      <div style="font-size:10px;color:#555;" id="wall-hint">16&times;7&times;3ft &mdash; 336 cf &mdash; 12.44 cy</div>
+    </div>
     <!-- PRICING MODE TOGGLE -->
     <div style="background:#0d1a0d;border:1px solid #1a3a1a;padding:10px 14px;margin-bottom:12px;">
       <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;color:#2ecc71;margin-bottom:8px;">PRICING MODE</div>
@@ -697,16 +706,16 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
       <div class="g2">
         <div class="f"><label>Cubic Yards (estimated)</label>
           <input type="number" id="deb-cy" step="0.25" min="0" placeholder="Enter CY" oninput="calcDebRes()">
-          <div class="hint">Trailer: 7.26 cy standard walls &middot; 9.9 cy extended walls</div>
+          <div class="hint">Standard 3ft walls: 12.44 cy &middot; Extended 4ft walls: 16.59 cy</div>
         </div>
         <div class="f"><label>Trailer Fill (quick select)</label>
           <div class="rg">
-            <div class="rb" onclick="setResF('1.82',this)">&frac14; ~1.8cy</div>
-            <div class="rb" onclick="setResF('3.63',this)">&frac12; ~3.6cy</div>
-            <div class="rb" onclick="setResF('5.45',this)">&frac34; ~5.5cy</div>
-            <div class="rb on" onclick="setResF('7.26',this)">Full ~7.3cy</div>
+            <div class="rb" onclick="setResF('3.11',this)">&frac14; ~3.1cy</div>
+            <div class="rb" onclick="setResF('6.22',this)">&frac12; ~6.2cy</div>
+            <div class="rb" onclick="setResF('9.33',this)">&frac34; ~9.3cy</div>
+            <div class="rb on" onclick="setResF('12.44',this)">Full ~12.4cy</div>
           </div>
-          <input type="hidden" id="deb-res-fill" value="7.26">
+          <input type="hidden" id="deb-res-fill" value="12.44">
         </div>
       </div>
       <div class="g3" style="margin-top:8px">
@@ -734,15 +743,15 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
     <div class="f">
       <label>Step 1 — Select Material (click card)</label>
       <div class="mat-grid">
-        <div class="mc sel" id="mc-brush" onclick="selMat('brush')"><div class="mc-chk"></div><div class="mc-n">Brush (Loose)</div><div class="mc-d">10–15 lbs/cf</div><div class="mc-r mc-g">✓ Full load OK</div><div class="mc-tr"><span class="mc-tl">Full:</span><span class="mc-tv">~1.2t</span></div><div class="mc-chg">$165/ton</div></div>
-        <div class="mc" id="mc-yard" onclick="selMat('yard')"><div class="mc-chk"></div><div class="mc-n">Yard Waste</div><div class="mc-d">10–20 lbs/cf</div><div class="mc-r mc-g">✓ Full load OK</div><div class="mc-tr"><span class="mc-tl">Full:</span><span class="mc-tv">~1.5t</span></div><div class="mc-chg">$165/ton</div></div>
-        <div class="mc" id="mc-household" onclick="selMat('household')"><div class="mc-chk"></div><div class="mc-n">Household Junk</div><div class="mc-d">20–35 lbs/cf</div><div class="mc-r mc-g">✓ Full load OK</div><div class="mc-tr"><span class="mc-tl">Full:</span><span class="mc-tv">~2.7t</span></div><div class="mc-chg">$215/ton</div></div>
-        <div class="mc" id="mc-cd" onclick="selMat('cd')"><div class="mc-chk"></div><div class="mc-n">C&amp;D Debris</div><div class="mc-d">30–50 lbs/cf</div><div class="mc-r mc-y">⚠ ¾ load max</div><div class="mc-tr"><span class="mc-tl">¾:</span><span class="mc-tv">~2.9–4.9t</span></div><div class="mc-chg">$215/ton</div></div>
-        <div class="mc" id="mc-stumps" onclick="selMat('stumps')"><div class="mc-chk"></div><div class="mc-n">Stumps / Roots</div><div class="mc-d">40–60 lbs/cf</div><div class="mc-r mc-y">⚠ ¾ load max</div><div class="mc-tr"><span class="mc-tl">¾:</span><span class="mc-tv">~2.9–4.4t</span></div><div class="mc-chg">$180/ton</div></div>
-        <div class="mc" id="mc-dirt" onclick="selMat('dirt')"><div class="mc-chk"></div><div class="mc-n">Dirt (Loose)</div><div class="mc-d">75–85 lbs/cf</div><div class="mc-r mc-rd">🛑 ¾ load MAX</div><div class="mc-tr"><span class="mc-tl">¾:</span><span class="mc-tv">~5.5–6.2t</span></div><div class="mc-chg">$165/ton</div></div>
-        <div class="mc" id="mc-wetsoil" onclick="selMat('wetsoil')"><div class="mc-chk"></div><div class="mc-n">Wet Soil / Mud</div><div class="mc-d">100–120 lbs/cf</div><div class="mc-r mc-rd">🛑 ½ load MAX</div><div class="mc-tr"><span class="mc-tl">½:</span><span class="mc-tv">~4.9–5.9t</span></div><div class="mc-chg">$165/ton</div></div>
-        <div class="mc" id="mc-gravel" onclick="selMat('gravel')"><div class="mc-chk"></div><div class="mc-n">Gravel / Rock</div><div class="mc-d">90–105 lbs/cf</div><div class="mc-r mc-rd">🛑 ½ load MAX</div><div class="mc-tr"><span class="mc-tl">½:</span><span class="mc-tv">~4.4–5.1t</span></div><div class="mc-chg">$165/ton</div></div>
-        <div class="mc" id="mc-concrete" onclick="selMat('concrete')"><div class="mc-chk"></div><div class="mc-n">Concrete / Asphalt</div><div class="mc-d">100–150 lbs/cf</div><div class="mc-r mc-rd">🛑 ¼ load MAX</div><div class="mc-tr"><span class="mc-tl">¼:</span><span class="mc-tv">~2.4–3.7t</span></div><div class="mc-chg">$240/ton</div></div>
+        <div class="mc sel" id="mc-brush" onclick="selMat('brush')"><div class="mc-chk"></div><div class="mc-n">Brush (Loose)</div><div class="mc-d">10–15 lbs/cf</div><div class="mc-r mc-g">✓ Full load OK</div><div class="mc-tr"><span class="mc-tl">Full:</span><span class="mc-tv">~2.1t</span></div><div class="mc-chg">$165/ton</div></div>
+        <div class="mc" id="mc-yard" onclick="selMat('yard')"><div class="mc-chk"></div><div class="mc-n">Yard Waste</div><div class="mc-d">10–20 lbs/cf</div><div class="mc-r mc-g">✓ Full load OK</div><div class="mc-tr"><span class="mc-tl">Full:</span><span class="mc-tv">~2.5t</span></div><div class="mc-chg">$165/ton</div></div>
+        <div class="mc" id="mc-household" onclick="selMat('household')"><div class="mc-chk"></div><div class="mc-n">Household Junk</div><div class="mc-d">20–35 lbs/cf</div><div class="mc-r mc-g">✓ Full load OK</div><div class="mc-tr"><span class="mc-tl">Full:</span><span class="mc-tv">~4.6t</span></div><div class="mc-chg">$215/ton</div></div>
+        <div class="mc" id="mc-cd" onclick="selMat('cd')"><div class="mc-chk"></div><div class="mc-n">C&amp;D Debris</div><div class="mc-d">30–50 lbs/cf</div><div class="mc-r mc-y">⚠ ¾ load max</div><div class="mc-tr"><span class="mc-tl">¾:</span><span class="mc-tv">~3.8–6.3t</span></div><div class="mc-chg">$215/ton</div></div>
+        <div class="mc" id="mc-stumps" onclick="selMat('stumps')"><div class="mc-chk"></div><div class="mc-n">Stumps / Roots</div><div class="mc-d">40–60 lbs/cf</div><div class="mc-r mc-y">⚠ ¾ load max</div><div class="mc-tr"><span class="mc-tl">¾:</span><span class="mc-tv">~3.8–5.7t</span></div><div class="mc-chg">$180/ton</div></div>
+        <div class="mc" id="mc-dirt" onclick="selMat('dirt')"><div class="mc-chk"></div><div class="mc-n">Dirt (Loose)</div><div class="mc-d">75–85 lbs/cf</div><div class="mc-r mc-rd">🛑 ¾ load MAX</div><div class="mc-tr"><span class="mc-tl">¾:</span><span class="mc-tv">~7.6–8.5t</span></div><div class="mc-chg">$165/ton</div></div>
+        <div class="mc" id="mc-wetsoil" onclick="selMat('wetsoil')"><div class="mc-chk"></div><div class="mc-n">Wet Soil / Mud</div><div class="mc-d">100–120 lbs/cf</div><div class="mc-r mc-rd">🛑 ½ load MAX</div><div class="mc-tr"><span class="mc-tl">½:</span><span class="mc-tv">~9.2–11.1t</span></div><div class="mc-chg">$165/ton</div></div>
+        <div class="mc" id="mc-gravel" onclick="selMat('gravel')"><div class="mc-chk"></div><div class="mc-n">Gravel / Rock</div><div class="mc-d">90–105 lbs/cf</div><div class="mc-r mc-rd">🛑 ½ load MAX</div><div class="mc-tr"><span class="mc-tl">½:</span><span class="mc-tv">~8.2–9.6t</span></div><div class="mc-chg">$165/ton</div></div>
+        <div class="mc" id="mc-concrete" onclick="selMat('concrete')"><div class="mc-chk"></div><div class="mc-n">Concrete / Asphalt</div><div class="mc-d">100–150 lbs/cf</div><div class="mc-r mc-rd">🛑 ¼ load MAX</div><div class="mc-tr"><span class="mc-tl">¼:</span><span class="mc-tv">~5.3–7.6t</span></div><div class="mc-chg">$240/ton</div></div>
       </div>
       <input type="hidden" id="deb-mat" value="brush">
     </div>
@@ -750,10 +759,10 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
     <div class="f" style="margin-top:12px">
       <label>Step 2 — Trailer Fill Level Per Load</label>
       <div class="fill-sel">
-        <div class="fo" id="fo-25" onclick="setFill('0.25',this)"><div class="fv"><div class="fb" style="height:25%"></div></div><div class="fl">¼ Load</div><div class="fc">49 cf</div></div>
-        <div class="fo on" id="fo-50" onclick="setFill('0.50',this)"><div class="fv"><div class="fb" style="height:50%"></div></div><div class="fl">½ Load</div><div class="fc">98 cf</div></div>
-        <div class="fo" id="fo-75" onclick="setFill('0.75',this)"><div class="fv"><div class="fb" style="height:75%"></div></div><div class="fl">¾ Load</div><div class="fc">147 cf</div></div>
-        <div class="fo" id="fo-100" onclick="setFill('1.0',this)"><div class="fv"><div class="fb" style="height:100%"></div></div><div class="fl">Full</div><div class="fc">196 cf</div></div>
+        <div class="fo" id="fo-25" onclick="setFill('0.25',this)"><div class="fv"><div class="fb" style="height:25%"></div></div><div class="fl">¼ Load</div><div class="fc">84 cf</div></div>
+        <div class="fo on" id="fo-50" onclick="setFill('0.50',this)"><div class="fv"><div class="fb" style="height:50%"></div></div><div class="fl">½ Load</div><div class="fc">168 cf</div></div>
+        <div class="fo" id="fo-75" onclick="setFill('0.75',this)"><div class="fv"><div class="fb" style="height:75%"></div></div><div class="fl">¾ Load</div><div class="fc">252 cf</div></div>
+        <div class="fo" id="fo-100" onclick="setFill('1.0',this)"><div class="fv"><div class="fb" style="height:100%"></div></div><div class="fl">Full</div><div class="fc">336 cf</div></div>
       </div>
       <input type="hidden" id="deb-fill" value="0.50">
     </div>
@@ -786,7 +795,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
     </div>
     <!-- CHEAT STRIP -->
     <div class="cs">
-      <span>7×14×2 = 196cf max</span>
+      <span>16×7×3 = 336cf std · 16×7×4 = 448cf ext</span>
       <span>cf × lbs/cf ÷ 2,000 = tons</span>
       <span>+15% buffer auto-applied</span>
       <span>Disposal $98.75/ton</span>
@@ -1420,7 +1429,7 @@ const DEB_DATA={
   gravel: {lo:90,hi:105,chg:165,maxF:0.50,minsPerLoad:{grapple:11,bucket:11}},
   concrete:{lo:100,hi:150,chg:240,maxF:0.25,minsPerLoad:{grapple:30,bucket:22}}
 };
-const TRL_CF=196;
+let TRL_CF=336; // 16x7x3ft standard walls — updateable via wall height selector
 let DISP_COST=98.75; // overridden by R.dumpCost after loadSettings()
 function selMat(mat){
   Object.keys(DEB_DATA).forEach(m=>{const c=$('mc-'+m);if(c)c.classList.remove('sel');});
@@ -2529,6 +2538,47 @@ function setDriveStatus(msg) {
   el.classList.toggle('show', !!msg);
 }
 
+
+// ── WALL HEIGHT SELECTOR ──
+function setWallHeight(mode, el) {
+  el.closest('.rg').querySelectorAll('.rb').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  const isExt = mode === 'ext';
+  // 16x7x3 = 336cf = 12.44cy | 16x7x4 = 448cf = 16.59cy
+  TRL_CF = isExt ? 448 : 336;
+  const cy = isExt ? 16.59 : 12.44;
+  const cf = isExt ? 448 : 336;
+  const hint = $('wall-hint');
+  if (hint) hint.textContent = (isExt ? '16×7×4ft' : '16×7×3ft') + ' — ' + cf + ' cf — ' + cy.toFixed(2) + ' cy';
+  // Update residential fill buttons
+  const fracs = isExt
+    ? ['4.15','8.30','12.44','16.59']
+    : ['3.11','6.22','9.33','12.44'];
+  const labels = isExt
+    ? ['¼ ~4.1cy','½ ~8.3cy','¾ ~12.4cy','Full ~16.6cy']
+    : ['¼ ~3.1cy','½ ~6.2cy','¾ ~9.3cy','Full ~12.4cy'];
+  const resFillBtns = document.querySelectorAll('#deb-res-section .rb');
+  resFillBtns.forEach((btn, i) => {
+    if (i < 4) {
+      btn.setAttribute('onclick', "setResF('" + fracs[i] + "',this)");
+      btn.textContent = labels[i];
+    }
+  });
+  // Update fill selector cf labels in tonnage mode
+  const cfs = isExt ? [112, 224, 336, 448] : [84, 168, 252, 336];
+  document.querySelectorAll('.fc').forEach((el2, i) => {
+    if (i < 4) el2.textContent = cfs[i] + ' cf';
+  });
+  // Reset fill default
+  const resHid = $('deb-res-fill');
+  if (resHid) resHid.value = isExt ? '16.59' : '12.44';
+  const cyInp = $('deb-cy');
+  if (cyInp) cyInp.value = '';
+  // Recalc
+  if (sv('deb-mode') === 'residential') calcDebRes();
+  else calcDeb();
+}
+
 // ── RESIDENTIAL DEBRIS MODE ──
 function setDebMode(mode, el) {
   $('deb-mode').value = mode;
@@ -2561,55 +2611,4 @@ function calcDebRes() {
   const sub = cy > 0 ? Math.max(249, raw) : 0;
   const minApplied = cy > 0 && raw < 249;
   // No machine charge in residential hand-load mode
-  S.deb = sub;
-  S.debDisp = 0; // dump fees baked into $65/cy
-  S.debH = 0;    // no machine hours — hand load only
-  const rcEl = $('deb-res-calc');
-  const rmEl = $('deb-res-min');
-  const rsEl = $('deb-res-sub');
-  if (rcEl) rcEl.textContent = cy > 0 ? fmt(raw) + ' (' + cy.toFixed(2) + ' cy x $65)' : '—';
-  if (rmEl) rmEl.textContent = minApplied ? '⚠ $249 min applied' : (cy > 0 ? '✓ Above min' : '—');
-  if (rsEl) rsEl.textContent = cy > 0 ? fmt(sub) + (noMachine ? ' · No equip charge' : '') : '—';
-  updAmt('deb', S.deb, S.debOn, cy > 0 ? cy.toFixed(1) + ' cy' : '');
-  calcTot();
-}
-
-// ── RENTAL EQUIPMENT ──
-function calcRnt() {
-  if (!S.rntOn) { S.rnt = 0; updAmt('rnt', 0, false, ''); calcTot(); return; }
-  const aug = parseFloat($('rnt-aug-dur') && $('rnt-aug-dur').value) || 0;
-  const bitRaw = ($('rnt-bit') && $('rnt-bit').value) || '0';
-  const bit = (parseFloat(bitRaw) || 0) * (parseFloat($('rnt-bit-days') && $('rnt-bit-days').value) || 1);
-  const trn = parseFloat($('rnt-trn-dur') && $('rnt-trn-dur').value) || 0;
-  const rol = parseFloat($('rnt-rol-dur') && $('rnt-rol-dur').value) || 0;
-  const mkup = parseFloat($('rnt-mkup') && $('rnt-mkup').value) || 1.0;
-  const cost = aug + bit + trn + rol;
-  const sub = cost > 0 ? Math.round(cost * mkup) : 0;
-  S.rnt = sub;
-  const tEl = $('rnt-trn-c'); if (tEl) tEl.textContent = trn > 0 ? fmt(trn) : '—';
-  const rEl = $('rnt-rol-c'); if (rEl) rEl.textContent = rol > 0 ? fmt(rol) : '—';
-  const cEl = $('rnt-cost'); if (cEl) cEl.textContent = cost > 0 ? fmt(cost) + ' (your cost)' : '—';
-  const sEl = $('rnt-sub'); if (sEl) sEl.textContent = cost > 0 ? fmt(sub) : '—';
-  updAmt('rnt', S.rnt, S.rntOn, cost > 0 ? fmt(cost) + ' rental' : '');
-  calcTot();
-}
-
-function resetF(){
-  if(!confirm('Clear all data and start a new quote?'))return;
-  ['clr','grv','deb','dem','grd','trn','rnt'].forEach(s=>{
-    S[s]=0;S[s+'On']=false;S[s+'H']=0;
-    $('t-'+s).classList.remove('on');
-    $('p-'+s).classList.remove('off');
-    $('b-'+s).classList.remove('open');
-    updAmt(s,0,false,'');
-  });
-  S.mob=0;S.debDisp=0;S.grvMat=0;S.tripCost=0;
-  ['cn','cp','ce','ja','jn','bp','excl','scale-actual'].forEach(id=>{$(id).value='';});
-  $('dist').value='';$('mob-d').textContent='$0';
-  $('qn').value='CHEW-'+Date.now().toString().slice(-5);
-  $('jd').value=new Date().toISOString().split('T')[0];
-  selMat('brush');sp();calcTot();
-}
-</script>
-</body>
-</html>
+  S.deb = sub
