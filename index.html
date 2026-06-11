@@ -2164,6 +2164,9 @@ const SETTINGS_DEFAULTS = {
   // Debris disposal customer rates per material
   debBrush:165, debYard:165, debHousehold:215, debCd:215,
   debStumps:180, debDirt:165, debWetsoil:165, debGravel:165, debConcrete:240,
+  // Run-rate calculator inputs (monthly costs + operating assumptions)
+  rrTrailer:0, rrIns:0, rrSoft:0, rrOther:0, rrFuel:0, rrDump:0,
+  rrWage:35, rrMaint:0, rrDays:22, rrHrs:6, rrMargin:50, rrDebhrs:1.5,
   pin:'1411'
 };
 let R = {...SETTINGS_DEFAULTS}; // live rates object
@@ -2173,6 +2176,18 @@ function loadSettings() {
     try { R = {...SETTINGS_DEFAULTS, ...JSON.parse(saved)}; } catch(e) {}
   }
   applyRatesToCalcs();
+  applyRunRateToInputs();
+}
+function applyRunRateToInputs() {
+  // Push saved run-rate values into the input fields so the calculator
+  // reads saved numbers even before the settings panel is opened.
+  const m = {
+    'rr-trailer':R.rrTrailer,'rr-ins':R.rrIns,'rr-soft':R.rrSoft,'rr-other':R.rrOther,
+    'rr-fuel':R.rrFuel,'rr-dump':R.rrDump,'rr-wage':R.rrWage,'rr-maint':R.rrMaint,
+    'rr-days':R.rrDays,'rr-hrs':R.rrHrs,'rr-margin':R.rrMargin,'rr-debhrs':R.rrDebhrs
+  };
+  for (const [id,val] of Object.entries(m)) { const el=$(id); if(el) el.value=val; }
+  if (typeof calcRunRate === 'function') calcRunRate();
 }
 function applyRatesToCalcs() {
   // Machine rates
@@ -2270,7 +2285,10 @@ function populateSettingsForm() {
     's-deb-household':R.debHousehold,'s-deb-cd':R.debCd,
     's-deb-stumps':R.debStumps,'s-deb-dirt':R.debDirt,
     's-deb-wetsoil':R.debWetsoil,'s-deb-gravel':R.debGravel,
-    's-deb-concrete':R.debConcrete
+    's-deb-concrete':R.debConcrete,
+    'rr-trailer':R.rrTrailer,'rr-ins':R.rrIns,'rr-soft':R.rrSoft,'rr-other':R.rrOther,
+    'rr-fuel':R.rrFuel,'rr-dump':R.rrDump,'rr-wage':R.rrWage,'rr-maint':R.rrMaint,
+    'rr-days':R.rrDays,'rr-hrs':R.rrHrs,'rr-margin':R.rrMargin,'rr-debhrs':R.rrDebhrs
   };
   for (const [id, val] of Object.entries(map)) {
     const el = $(id); if (el) el.value = val;
@@ -2337,6 +2355,19 @@ function saveSettings() {
   setRate('debWetsoil','s-deb-wetsoil');
   setRate('debGravel','s-deb-gravel');
   setRate('debConcrete','s-deb-concrete');
+  // Run-rate calculator fields — same blank-keeps-saved / respect-0 logic
+  setRate('rrTrailer','rr-trailer');
+  setRate('rrIns','rr-ins');
+  setRate('rrSoft','rr-soft');
+  setRate('rrOther','rr-other');
+  setRate('rrFuel','rr-fuel');
+  setRate('rrDump','rr-dump');
+  setRate('rrWage','rr-wage');
+  setRate('rrMaint','rr-maint');
+  setRate('rrDays','rr-days');
+  setRate('rrHrs','rr-hrs');
+  setRate('rrMargin','rr-margin');
+  setRate('rrDebhrs','rr-debhrs');
   localStorage.setItem('chew_rates', JSON.stringify(R));
   applyRatesToCalcs();
   // Update default trip charge inputs
