@@ -1610,13 +1610,26 @@ function calcTot(){
   const contAmt=base*cont;
   let total=base+contAmt;
   // Dynamic job floor: $249 when residential debris is the ONLY active section
-  // (truck-only job, no machine on the trailer). $400 otherwise — anything with
-  // the machine (clearing, demo, grading, trenching, rental) or gravel hauling
-  // carries the full mobilization + equipment exposure.
+  // (truck-only job, no machine on the trailer). Otherwise the floor is a
+  // 6-HOUR MACHINE-DAY MINIMUM — no machine job is billed under 6 hrs of time,
+  // even if the calculated work is shorter. Goes higher when work exceeds 6 hrs,
+  // never lower. Material/disposal costs sit on top of the time floor.
   const debOnly=S.debOn&&!S.clrOn&&!S.grvOn&&!S.demOn&&!S.grdOn&&!S.trnOn&&!S.rntOn;
+  const machineOn=S.clrOn||S.grvOn||S.demOn||S.grdOn||S.trnOn;
+  const MIN_HRS=6;
+  // Machine labor hours across active sections
+  const machineHrs=S.clrH+S.grvH+S.demH+S.grdH+S.trnH;
+  let minDayAdj=0;
+  if(machineOn&&machineHrs>0&&machineHrs<MIN_HRS){
+    // Bill the shortfall hours at a representative machine rate (bucket rate)
+    const shortfall=MIN_HRS-machineHrs;
+    minDayAdj=Math.round(shortfall*R.bucket);
+    total=total+minDayAdj;
+  }
+  // Legacy dollar floor still applies as a backstop for debris-only / tiny jobs
   const jobFloor=debOnly?249:400;
-  const minHit=total>0&&total<jobFloor;
-  if(minHit)total=jobFloor;
+  const minHit=(total>0&&total<jobFloor)||minDayAdj>0;
+  if(total>0&&total<jobFloor)total=jobFloor;
   // Apply subscriber discount first
   const subDiscAmt=subDiscPct>0?Math.round(total*subDiscPct):0;
   total=total-subDiscAmt;
@@ -1634,7 +1647,10 @@ function calcTot(){
   const cdEl=$('r-cash-disc');
   if(cdEl){if(cashDiscAmt>0){cdEl.textContent='-'+fmt(cashDiscAmt)+' ('+sv('cash-disc')+'% cash)';cdEl.classList.remove('z');}else{cdEl.textContent='—';cdEl.classList.add('z');}}
   $('r-min').classList.toggle('show',minHit);
-  if(minHit)$('r-min').textContent='⚠ Min '+fmt(jobFloor)+' applied'+(debOnly?' (debris-only)':'');
+  if(minHit){
+    if(minDayAdj>0)$('r-min').textContent='⚠ 6-hr day minimum applied (+'+fmt(minDayAdj)+')';
+    else $('r-min').textContent='⚠ Min '+fmt(jobFloor)+' applied'+(debOnly?' (debris-only)':'');
+  }
   // Scale reconciliation
   const scaleW=fv('scale-actual');
   if(scaleW>0){
