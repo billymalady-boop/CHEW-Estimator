@@ -601,6 +601,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
         <input type="hidden" id="clr-att" value="brush">
       </div>
     </div>
+    <div class="hint" style="margin:-4px 0 8px;color:#F5C400;">⚠ Machine limit: JCB 215T (75 HP / 31 GPM) handles trees up to ~6&quot; diameter. Anything larger = price custom or sub out — don't bid it on the standard rate.</div>
     <div class="g3">
       <div class="f"><label>Terrain</label>
         <div class="rg">
@@ -1383,16 +1384,16 @@ function calcMob(){
 }
 // ── CLEARING ──
 const CLR_BASE={'1':350,'2':550,'3':900};
-const CLR_APH={'1':1.5,'2':0.9,'3':0.5};
+const CLR_APH={'1':1.5,'2':1.0,'3':0.5};
 const CLR_RATE={brush:160,grapple:155,bucket:150};
 function calcClr(){
   if(!S.clrOn){S.clr=0;S.clrH=0;updAmt('clr',0,false,'');calcTot();return;}
   const ac=fv('clr-ac'),den=sv('clr-den'),ter=parseFloat(sv('clr-ter')),rck=parseFloat(sv('clr-rck')),att=sv('clr-att');
   const rate=CLR_RATE[att],mx=ter*rck;
-  const hrs=Math.max(2,(ac/CLR_APH[den])*mx);
+  const hrs=(ac/CLR_APH[den])*mx;
   let sub=ac*CLR_BASE[den]*mx;
-  const minHit=sub>0&&sub<400;
-  if(minHit)sub=400;
+  // No internal $400 floor — the 6-hr machine-day minimum in calcTot() is the single floor.
+  const minHit=false;
   S.clr=ac>0?sub:0;S.clrH=ac>0?hrs:0;
   $('clr-br').textContent='$'+rate+'/hr';
   $('clr-mx').textContent=mx.toFixed(2)+'×';
