@@ -597,6 +597,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
           <div class="rb on" onclick="sr('clr-att','brush',this);calcClr()">Brush Hog</div>
           <div class="rb" onclick="sr('clr-att','grapple',this);calcClr()">Grapple</div>
           <div class="rb" onclick="sr('clr-att','bucket',this);calcClr()">Bucket</div>
+          <div class="rb" onclick="sr('clr-att','mulch',this);calcClr()">Mulcher</div>
         </div>
         <input type="hidden" id="clr-att" value="brush">
       </div>
@@ -1265,6 +1266,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
     <div class="pl"><span class="pll">Disposal actual cost</span><span class="plv" id="p-disp">—</span></div>
     <div class="pl"><span class="pll">Material actual cost</span><span class="plv" id="p-mat">—</span></div>
     <div class="pl"><span class="pll">Trip charges cost</span><span class="plv" id="p-trip">—</span></div>
+    <div class="pl" id="p-teeth-row" style="display:none"><span class="pll">Mulcher teeth wear</span><span class="plv" id="p-teeth">—</span></div>
     <div class="ptt"><span class="ptl">Est. Profit</span><span class="ptv" id="p-tot">—</span></div>
   </div>
   <!-- BUTTONS -->
@@ -1307,7 +1309,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
 const S={
   mob:0,clr:0,grv:0,deb:0,dem:0,grd:0,trn:0,rnt:0,
   clrOn:false,grvOn:false,debOn:false,demOn:false,grdOn:false,trnOn:false,rntOn:false,
-  clrH:0,grvH:0,debH:0,demH:0,grdH:0,trnH:0,
+  clrH:0,grvH:0,debH:0,demH:0,grdH:0,trnH:0,clrTeeth:0,
   debDisp:0,grvMat:0,tripCost:0,status:'ESTIMATE',selMat:'brush'
 };
 const $=id=>document.getElementById(id);
@@ -1386,12 +1388,30 @@ function calcMob(){
 const CLR_BASE={'1':350,'2':550,'3':900};
 const CLR_APH={'1':1.5,'2':1.0,'3':0.5};
 const CLR_RATE={brush:160,grapple:155,bucket:150};
+// SP-500 forestry mulcher: production in ACRES PER DAY (8-hr day) by density.
+// L1 light 2.0 / L2 moderate 1.2 / L3 heavy 0.8 — matches industry skid-steer mulcher rates.
+const MUL_APD={'1':2.0,'2':1.2,'3':0.8};
+const MUL_RATE=200;      // customer rate $/hr
+const MUL_TEETH=14;      // teeth-wear accrual $/hr — OWNER VIEW ONLY, never in customer price
+const MUL_DAYHRS=8;
 function calcClr(){
   if(!S.clrOn){S.clr=0;S.clrH=0;updAmt('clr',0,false,'');calcTot();return;}
   const ac=fv('clr-ac'),den=sv('clr-den'),ter=parseFloat(sv('clr-ter')),rck=parseFloat(sv('clr-rck')),att=sv('clr-att');
-  const rate=CLR_RATE[att],mx=ter*rck;
-  const hrs=(ac/CLR_APH[den])*mx;
-  let sub=ac*CLR_BASE[den]*mx;
+  const mx=ter*rck;
+  let sub, hrs, rate;
+  if(att==='mulch'){
+    // SP-500 mulcher: per-day production model. Hours = (acres / acres-per-day) * 8hr * multipliers.
+    rate=MUL_RATE;
+    hrs=(ac/MUL_APD[den])*MUL_DAYHRS*mx;
+    sub=hrs*rate;
+    // Owner-view teeth-wear accrual (not added to customer price; shown in owner profit panel)
+    S.clrTeeth=ac>0?hrs*MUL_TEETH:0;
+  } else {
+    rate=CLR_RATE[att];
+    hrs=(ac/CLR_APH[den])*mx;
+    sub=ac*CLR_BASE[den]*mx;
+    S.clrTeeth=0;
+  }
   // No internal $400 floor — the 6-hr machine-day minimum in calcTot() is the single floor.
   const minHit=false;
   S.clr=ac>0?sub:0;S.clrH=ac>0?hrs:0;
@@ -1688,10 +1708,13 @@ function calcTot(){
   const tripTotal=tripCostOf('deb-trip')*(fv('deb-loads')||1)*(S.debOn?1:0)
                 +tripCostOf('gv-trip')*Math.max(1,Math.ceil((fv('gv-tons')||1)/5))*(S.grvOn?1:0)
                 +tripCostOf('dem-trip')*(fv('dem-lo')||1)*(S.demOn?1:0);
-  const mach=totH*44,oper=totH*35,profit=total-mach-oper-S.debDisp-S.grvMat-S.mob-tripTotal;
+  const teeth=S.clrTeeth||0;
+  const mach=totH*44,oper=totH*35,profit=total-mach-oper-S.debDisp-S.grvMat-S.mob-tripTotal-teeth;
   $('p-mach').textContent=fmt(mach);$('p-oper').textContent=fmt(oper);
   $('p-disp').textContent=fmt(S.debDisp);$('p-mat').textContent=fmt(S.grvMat);
   $('p-trip').textContent=fmt(tripTotal);
+  $('p-teeth').textContent=fmt(teeth);
+  $('p-teeth-row').style.display=teeth>0?'flex':'none';
   $('p-tot').textContent=fmt(profit)+(totH>0?' ('+fmt(profit/totH)+'/hr)':'');
   // Print summary
   updPS(total,contAmt,surTotal,depAmt);
