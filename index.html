@@ -1268,6 +1268,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
     <div class="pl"><span class="pll">Trip charges cost</span><span class="plv" id="p-trip">—</span></div>
     <div class="pl" id="p-teeth-row" style="display:none"><span class="pll">Mulcher teeth wear</span><span class="plv" id="p-teeth">—</span></div>
     <div class="ptt"><span class="ptl">Est. Profit</span><span class="ptv" id="p-tot">—</span></div>
+    <div id="p-floor-warn" style="display:none;background:#3a1212;border:1px solid #e74c3c;color:#ff6b6b;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 10px;border-radius:6px;margin-top:8px;text-align:center;">⚠ Below $60/hr profit floor</div>
   </div>
   <!-- BUTTONS -->
   <div style="margin-top:14px">
@@ -1384,14 +1385,20 @@ function calcMob(){
   else if(d<=45)f=R.mob4;else if(d<=55)f=R.mob5;else if(d>55)f=R.mob6;
   S.mob=f;$('mob-d').textContent=fmt(f);calcTot();
 }
-// ── CLEARING ──
-const CLR_BASE={'1':350,'2':550,'3':900};
-const CLR_APH={'1':1.5,'2':1.0,'3':0.5};
+// ── CLEARING ──  (per-acre tables = time-based price floored at the published "starting at" rates; see build spec)
+// Brush Cut (Brush Hog): light/med held at $550 floor, heavy $740 (time exceeds floor)
+// Grapple/Bucket treated like brush-class clearing (same per-acre table) unless hauling
+const CLR_PERACRE={
+  brush:   {'1':550,'2':550,'3':740},
+  grapple: {'1':550,'2':550,'3':740},
+  bucket:  {'1':550,'2':550,'3':740},
+  mulch:   {'1':900,'2':925,'3':1388}
+};
+const CLR_APH={'1':1.5,'2':1.0,'3':0.5};   // brush-class production hrs reference
 const CLR_RATE={brush:160,grapple:155,bucket:150};
-// SP-500 forestry mulcher: production in ACRES PER DAY (8-hr day) by density.
-// L1 light 2.0 / L2 moderate 1.2 / L3 heavy 0.8 — matches industry skid-steer mulcher rates.
+// SP-500 forestry mulcher production in ACRES PER DAY by density (for hours/teeth calc)
 const MUL_APD={'1':2.0,'2':1.2,'3':0.8};
-const MUL_RATE=200;      // customer rate $/hr
+const MUL_RATE=200;      // legacy hourly ref (hours calc only; price now per-acre table)
 const MUL_TEETH=14;      // teeth-wear accrual $/hr — OWNER VIEW ONLY, never in customer price
 const MUL_DAYHRS=8;
 function calcClr(){
@@ -1399,25 +1406,25 @@ function calcClr(){
   const ac=fv('clr-ac'),den=sv('clr-den'),ter=parseFloat(sv('clr-ter')),rck=parseFloat(sv('clr-rck')),att=sv('clr-att');
   const mx=ter*rck;
   let sub, hrs, rate;
+  const perAcre=(CLR_PERACRE[att]||CLR_PERACRE.brush)[den];
   if(att==='mulch'){
-    // SP-500 mulcher: per-day production model. Hours = (acres / acres-per-day) * 8hr * multipliers.
-    rate=MUL_RATE;
+    // hours for the day-model (drives teeth wear + the 6-hr min check); price uses per-acre table
     hrs=(ac/MUL_APD[den])*MUL_DAYHRS*mx;
-    sub=hrs*rate;
-    // Owner-view teeth-wear accrual (not added to customer price; shown in owner profit panel)
+    sub=ac*perAcre*mx;                 // per-acre floor table × multipliers
+    rate=MUL_RATE;
     S.clrTeeth=ac>0?hrs*MUL_TEETH:0;
   } else {
-    rate=CLR_RATE[att];
     hrs=(ac/CLR_APH[den])*mx;
-    sub=ac*CLR_BASE[den]*mx;
+    sub=ac*perAcre*mx;                 // per-acre floor table × multipliers
+    rate=CLR_RATE[att];
     S.clrTeeth=0;
   }
-  // No internal $400 floor — the 6-hr machine-day minimum in calcTot() is the single floor.
+  // No internal $400 floor — the per-acre table is the floor; $950 machine-day min in calcTot() backstops tiny jobs.
   const minHit=false;
   S.clr=ac>0?sub:0;S.clrH=ac>0?hrs:0;
-  $('clr-br').textContent='$'+rate+'/hr';
+  $('clr-br').textContent='$'+perAcre+'/ac';
   $('clr-mx').textContent=mx.toFixed(2)+'×';
-  $('clr-er').textContent='$'+Math.round(rate*mx)+'/hr eff.';
+  $('clr-er').textContent='$'+Math.round(perAcre*mx)+'/ac eff.';
   $('clr-hr').textContent=ac>0?hrs.toFixed(1)+' hrs':'—';
   $('clr-sub').textContent=ac>0?fmt(sub):'—';
   $('clr-min').classList.toggle('show',minHit&&ac>0);
@@ -1647,8 +1654,8 @@ function calcTot(){
     minDayAdj=Math.round(shortfall*R.bucket);
     total=total+minDayAdj;
   }
-  // Legacy dollar floor still applies as a backstop for debris-only / tiny jobs
-  const jobFloor=debOnly?249:400;
+  // Dollar floor: machine jobs $950 (build spec), debris-only $249
+  const jobFloor=debOnly?249:950;
   const minHit=(total>0&&total<jobFloor)||minDayAdj>0;
   if(total>0&&total<jobFloor)total=jobFloor;
   // Apply subscriber discount first
@@ -1715,7 +1722,20 @@ function calcTot(){
   $('p-trip').textContent=fmt(tripTotal);
   $('p-teeth').textContent=fmt(teeth);
   $('p-teeth-row').style.display=teeth>0?'flex':'none';
-  $('p-tot').textContent=fmt(profit)+(totH>0?' ('+fmt(profit/totH)+'/hr)':'');
+  const profitPerHr=totH>0?profit/totH:0;
+  $('p-tot').textContent=fmt(profit)+(totH>0?' ('+fmt(profitPerHr)+'/hr)':'');
+  // $60/hr business-profit floor warning (build spec section 2)
+  const pfEl=$('p-floor-warn');
+  if(pfEl){
+    if(totH>0&&profitPerHr<60){
+      pfEl.textContent='⚠ BELOW $60/hr PROFIT FLOOR — reprice or raise scope';
+      pfEl.style.display='block';
+      $('p-tot').style.color='#e74c3c';
+    } else {
+      pfEl.style.display='none';
+      $('p-tot').style.color='';
+    }
+  }
   // Print summary
   updPS(total,contAmt,surTotal,depAmt);
 }
