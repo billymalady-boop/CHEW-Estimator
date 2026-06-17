@@ -1643,18 +1643,21 @@ function calcTot(){
   // even if the calculated work is shorter. Goes higher when work exceeds 6 hrs,
   // never lower. Material/disposal costs sit on top of the time floor.
   const debOnly=S.debOn&&!S.clrOn&&!S.grvOn&&!S.demOn&&!S.grdOn&&!S.trnOn&&!S.rntOn;
-  const machineOn=S.clrOn||S.grvOn||S.demOn||S.grdOn||S.trnOn;
   const MIN_HRS=6;
-  // Machine labor hours across active sections
-  const machineHrs=S.clrH+S.grvH+S.demH+S.grdH+S.trnH;
+  // Hourly 6-hr minimum applies ONLY to hourly-priced sections (gravel/demo/grading/trenching).
+  // CLEARING is now priced PER-ACRE (its per-acre rate + the $950 job floor are its floor),
+  // so clearing hours are EXCLUDED here to avoid double-charging on top of the per-acre price.
+  const hourlyHrs=S.grvH+S.demH+S.grdH+S.trnH;   // clearing (S.clrH) deliberately excluded
+  const hourlyOn=S.grvOn||S.demOn||S.grdOn||S.trnOn;
   let minDayAdj=0;
-  if(machineOn&&machineHrs>0&&machineHrs<MIN_HRS){
+  if(hourlyOn&&hourlyHrs>0&&hourlyHrs<MIN_HRS){
     // Bill the shortfall hours at a representative machine rate (bucket rate)
-    const shortfall=MIN_HRS-machineHrs;
+    const shortfall=MIN_HRS-hourlyHrs;
     minDayAdj=Math.round(shortfall*R.bucket);
     total=total+minDayAdj;
   }
-  // Dollar floor: machine jobs $950 (build spec), debris-only $249
+  // Dollar floor: machine jobs $950 (build spec), debris-only $249.
+  // This is what protects small CLEARING jobs (per-acre price floored up to $950).
   const jobFloor=debOnly?249:950;
   const minHit=(total>0&&total<jobFloor)||minDayAdj>0;
   if(total>0&&total<jobFloor)total=jobFloor;
