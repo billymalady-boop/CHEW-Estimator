@@ -1273,12 +1273,13 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
   <!-- BUTTONS -->
   <div style="margin-top:14px">
     <button class="btn btn-r" onclick="window.print()">🖨 Print / Save PDF</button>
-    <button class="btn btn-y" onclick="emailQ()">✉ Email Quote</button>
+    <button class="btn btn-y" onclick="copyProposalData()">📋 Proposal Data (copy for Claude)</button>
     <button class="btn settings-btn no-print" onclick="openSettings()">⚙ Rates</button>
     <button class="btn btn-drive" onclick="saveToDrive()">💾 Save to Drive</button>
     <div class="drive-status" id="drive-status"></div>
     <button class="btn btn-o" onclick="resetF()">↺ New Quote</button>
   </div>
+  <div id="proposal-data-out" style="display:none;margin-top:10px;background:#0d0d0d;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;color:#cfcfcf;white-space:pre-wrap;line-height:1.5;"></div>
   <!-- QUICK REF -->
   <div class="qref">
     <div class="qrt">Rate Reference</div>
@@ -2012,6 +2013,55 @@ function buildEmailBody() {
   const subj=`CHEW ${S.status} ${qnum} — ${addr}`;
   const htmlBody = buildHtmlEmail();
   return { to: em, subject: subj, body: htmlBody, cust, addr, qnum, depAmt };
+}
+function copyProposalData(){
+  // Readable label maps
+  const denMap={'1':'Sparse (L1)','2':'Moderate (L2)','3':'Heavy (L3)'};
+  const terMap={'1.0':'Flat','1.15':'Sloped','1.3':'Hilly'};
+  const rckMap={'1.0':'No Rock','1.2':'Caliche','1.4':'Heavy Rock'};
+  const attMap={'brush':'Brush Cut (Brush Hog)','grapple':'Grapple','bucket':'Bucket','mulch':'Mulch In Place (SP-500)'};
+  const debMap={'0':'Pile on property — customer burns','1':'Haul off'};
+  const g=id=>document.getElementById(id);
+  const val=id=>(g(id)?g(id).value:'')||'';
+  const customer=val('cn').trim();
+  const addr=val('ca').trim();
+  const qnum=val('qnum').trim();
+  const total=(document.querySelector('#tot-amt')?.textContent||'').trim();
+  let out='=== CHEW PROPOSAL DATA ===\n';
+  out+='(Copy this + paste with your site-walk transcript)\n\n';
+  if(customer) out+='Customer: '+customer+'\n';
+  if(addr) out+='Property: '+addr+'\n';
+  if(qnum) out+='Quote #: '+qnum+'\n';
+  out+='\n';
+  if(S.clrOn){
+    out+='SERVICE: Land Clearing\n';
+    out+='Tier: '+(attMap[val('clr-att')]||val('clr-att'))+'\n';
+    out+='Acreage: '+(val('clr-ac')||'0')+' acres\n';
+    out+='Density: '+(denMap[val('clr-den')]||val('clr-den'))+'\n';
+    out+='Terrain: '+(terMap[val('clr-ter')]||val('clr-ter'))+'\n';
+    out+='Ground: '+(rckMap[val('clr-rck')]||val('clr-rck'))+'\n';
+    const debSel=g('clr-deb')?g('clr-deb').value:'';
+    if(debSel!=='') out+='Material: '+(debMap[debSel]||'Mulched/left on site')+'\n';
+    out+='\n';
+  }
+  if(S.debOn) out+='SERVICE: Debris / Cleanout (see estimator for details)\n';
+  if(S.grvOn) out+='SERVICE: Gravel / Driveway (see estimator for details)\n';
+  if(S.demOn) out+='SERVICE: Demolition (see estimator for details)\n';
+  if(S.grdOn) out+='SERVICE: Grading (see estimator for details)\n';
+  out+='PRICE (as scoped): '+(total||'$0')+'\n';
+  out+='Note: Minimum job price applies. Mobilization included per distance band.\n';
+  out+='\n[Access, trees to keep, customer goal, and any special notes — see transcript.]';
+
+  const box=document.getElementById('proposal-data-out');
+  box.style.display='block';
+  box.textContent=out;
+  // Copy to clipboard
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(out).then(()=>{
+      const btn=document.querySelector('.btn-y');
+      if(btn){const o=btn.textContent;btn.textContent='✓ Copied! Paste to Claude w/ transcript';setTimeout(()=>{btn.textContent=o;},4000);}
+    }).catch(()=>{});
+  }
 }
 function emailQ() {
   const em = sv('ce');
