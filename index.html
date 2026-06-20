@@ -2026,7 +2026,7 @@ function copyProposalData(){
   const customer=val('cn').trim();
   const addr=val('ca').trim();
   const qnum=val('qnum').trim();
-  const total=(document.querySelector('#tot-amt')?.textContent||'').trim();
+  const total=(document.getElementById('r-tot')?.textContent||document.getElementById('live-total')?.textContent||'').trim();
   let out='=== CHEW PROPOSAL DATA ===\n';
   out+='(Copy this + paste with your site-walk transcript)\n\n';
   if(customer) out+='Customer: '+customer+'\n';
