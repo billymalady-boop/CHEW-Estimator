@@ -622,8 +622,8 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
       </div>
       <div class="f"><label>Debris Handling</label>
         <select id="clr-deb" onchange="calcClr()">
-          <option value="0">Pile on property — customer burns</option>
-          <option value="0">Brush hog / mulch in place</option>
+          <option value="mulch" selected>Brush hog / mulch in place</option>
+          <option value="burn">Pile on property — customer burns</option>
           <option value="1">Haul off — add Debris section below</option>
         </select>
       </div>
@@ -2020,7 +2020,7 @@ function copyProposalData(){
   const terMap={'1.0':'Flat','1.15':'Sloped','1.3':'Hilly'};
   const rckMap={'1.0':'No Rock','1.2':'Caliche','1.4':'Heavy Rock'};
   const attMap={'brush':'Brush Cut (Brush Hog)','grapple':'Grapple','bucket':'Bucket','mulch':'Mulch In Place (SP-500)'};
-  const debMap={'0':'Pile on property — customer burns','1':'Haul off'};
+  const debMap={'mulch':'Mulched in place — left as ground cover','burn':'Piled on property — customer burns','1':'Hauled off site'};
   const g=id=>document.getElementById(id);
   const val=id=>(g(id)?g(id).value:'')||'';
   const customer=val('cn').trim();
