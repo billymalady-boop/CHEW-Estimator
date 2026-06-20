@@ -329,7 +329,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
         <div class="settings-section">
           <h3>YOUR ACTUAL DUMP FEE (NOT SHOWN TO CUSTOMER)</h3>
           <div class="settings-grid">
-            <div class="sf"><label>Transfer Station Cost ($/ton)</label><input type="number" id="s-dump-cost" value="98.75" step="0.25"><div class="hint">Copperas Cove Transfer Station · update when fees change</div></div>
+            <div class="sf"><label>Transfer Station Cost ($/ton)</label><input type="number" id="s-dump-cost" value="92.10" step="0.25"><div class="hint">Copperas Cove Transfer Station · update when fees change</div></div>
             <div class="sf"><label>Default Trip Charge ($/load)</label><input type="number" id="s-trip" value="65"><div class="hint">Round trip to transfer station</div></div>
           </div>
         </div>
@@ -558,6 +558,16 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
         <div class="cv" id="mob-d">$0</div>
         <div class="hint">Auto-calculated from distance</div>
       </div>
+    </div>
+    <div class="f">
+      <label>Dump / Transfer Station (applies to all dump-requiring services)</label>
+      <select id="facility-sel" onchange="setFacility(this.value)">
+        <option value="cove">Copperas Cove — $92.10/t (resident, verify)</option>
+        <option value="killeen">Killeen — $137.60/t (confirmed)</option>
+        <option value="temple">Temple — $95.00/t (verify)</option>
+        <option value="waco">Waco — $75 clean / $125 concrete</option>
+      </select>
+      <div class="hint" id="facility-hint">Copperas Cove · $92.10/t ⚠ VERIFY · resident rate — VERIFY resident vs $118.40 non-resident</div>
     </div>
     <div class="warn show" id="dist-warn" style="display:none!important">⚠ Job site is over 60 miles from base — outside standard service radius. Add travel surcharge or decline job.</div>
     <div class="f"><label>Quote Valid For</label>
@@ -826,7 +836,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
       <span>16×7×3 = 336cf std · 16×7×4 = 448cf ext</span>
       <span>cf × lbs/cf ÷ 2,000 = tons</span>
       <span>+15% buffer auto-applied</span>
-      <span>Disposal $98.75/ton</span>
+      <span>Disposal $92.10/ton</span>
       <span>Scale closes 3:30PM Mon–Fri</span>
       <span>Station 8 mi from base</span>
     </div>
@@ -921,7 +931,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
     <div class="g3">
       <div><div class="cl">Breaking Labor</div><div class="cv sm" id="dem-bl">—</div></div>
       <div><div class="cl">Loading Labor</div><div class="cv sm" id="dem-ll">—</div></div>
-      <div><div class="cl">Haul-Off + Trips</div><div class="cv sm" id="dem-hl">—</div></div>
+      <div><div class="cl">Haul-Off + Trips</div><div class="cv sm" id="dem-hl">—</div><div class="hint" id="dem-hl-hint"></div></div>
     </div>
     <div style="margin-top:10px"><div class="cl">Demo Subtotal</div><div class="cv" id="dem-sub">—</div></div>
   </div>
@@ -1292,7 +1302,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
       Jackhammer: $175/hr · 2hr min<br>
       Minimum Job: $400<br>
       Residential Debris: $65/cy · $249 min<br>
-      Disposal: $98.75/ton<br>
+      Disposal: $92.10/ton<br>
       Trip Charge: $65/load (default)<br>
       Scale closes: 3:30 PM M–F<br>
       ── RENTALS ──<br>
@@ -1312,7 +1322,7 @@ const S={
   mob:0,clr:0,grv:0,deb:0,dem:0,grd:0,trn:0,rnt:0,
   clrOn:false,grvOn:false,debOn:false,demOn:false,grdOn:false,trnOn:false,rntOn:false,
   clrH:0,grvH:0,debH:0,demH:0,grdH:0,trnH:0,clrTeeth:0,
-  debDisp:0,grvMat:0,tripCost:0,status:'ESTIMATE',selMat:'brush'
+  debDisp:0,demDisp:0,grvMat:0,tripCost:0,status:'ESTIMATE',selMat:'brush'
 };
 const $=id=>document.getElementById(id);
 const fv=id=>parseFloat($(id)?.value)||0;
@@ -1378,12 +1388,49 @@ function sp(){
   const pc=$('pi-cust');
   if(pc)pc.style.display=(sv('cn')||sv('ja'))?'grid':'none';
 }
+// ── DUMP FACILITY SELECTOR (global — drives DISP_COST for all dump-requiring services) ──
+const DUMP_FACILITIES={
+  cove:    {name:'Copperas Cove', rate:92.10,  concRate:92.10,  verify:true,  note:'resident rate — VERIFY resident vs $118.40 non-resident'},
+  killeen: {name:'Killeen',       rate:137.60, concRate:137.60, verify:false, note:'confirmed · tarped + strapped required'},
+  temple:  {name:'Temple',        rate:95.00,  concRate:95.00,  verify:true,  note:'placeholder — VERIFY'},
+  waco:    {name:'Waco',          rate:75.00,  concRate:125.00, verify:false, note:'$75 clean / $125 with concrete'}
+};
+let CUR_FACILITY='cove';
+function setFacility(key){
+  if(!DUMP_FACILITIES[key])key='cove';
+  CUR_FACILITY=key;
+  const f=DUMP_FACILITIES[key];
+  DISP_COST=f.rate;
+  const sd=$('s-dump-cost'); if(sd)sd.value=f.rate;
+  if(R)R.dumpCost=f.rate;
+  const h=$('facility-hint');
+  if(h)h.textContent=f.name+' · $'+f.rate.toFixed(2)+'/t'+(f.verify?' ⚠ VERIFY':'')+' · '+f.note;
+  if(typeof calcDeb==='function')calcDeb();
+  if(typeof calcDebRes==='function')calcDebRes();
+  if(typeof calcDem==='function')calcDem();
+  if(typeof calcTot==='function')calcTot();
+}
+function facilityRate(mat){
+  const f=DUMP_FACILITIES[CUR_FACILITY]||DUMP_FACILITIES.cove;
+  const isConc=(mat==='concrete'||mat==='asphalt'||mat==='cd'||mat==='dirt');
+  return isConc?f.concRate:f.rate;
+}
 // ── MOB ──
+function machineOnJob(){
+  if(S.clrOn||S.grvOn||S.demOn||S.grdOn||S.trnOn)return true;
+  if(S.debOn && sv('deb-mode')!=='residential')return true;
+  if(S.debOn && sv('deb-mode')==='residential'){
+    const nm=$('res-no-machine'); if(nm && !nm.checked)return true;
+  }
+  return false;
+}
 function calcMob(){
   const d=fv('dist');
   let f=0;
-  if(d>0&&d<=15)f=R.mob1;else if(d<=25)f=R.mob2;else if(d<=35)f=R.mob3;
-  else if(d<=45)f=R.mob4;else if(d<=55)f=R.mob5;else if(d>55)f=R.mob6;
+  if(d>0 && machineOnJob()){
+    if(d<=15)f=R.mob1;else if(d<=25)f=R.mob2;else if(d<=35)f=R.mob3;
+    else if(d<=45)f=R.mob4;else if(d<=55)f=R.mob5;else f=R.mob6;
+  }
   S.mob=f;$('mob-d').textContent=fmt(f);calcTot();
 }
 // ── CLEARING ──  (per-acre tables = time-based price floored at the published "starting at" rates; see build spec)
@@ -1453,7 +1500,7 @@ function calcGrv(){
   const tons=Math.round(tons_raw*1.10*10)/10; // +10% waste factor
   const loads=Math.max(1,Math.ceil(tons/5));
   const matChg=tons*chargeTon;
-  const trips=loads*tripChg;
+  const trips=Math.max(0,loads-1)*tripChg; // extra dump runs only
   // Spread hours: ~1.5hr per 1000sf (spread + grade + crown), 3hr minimum, rounded UP to nearest 0.5hr
   const sf=l*w;
   const spdHraw=Math.max(3,sf/1000*1.5);
@@ -1487,7 +1534,7 @@ const DEB_DATA={
   concrete:{lo:100,hi:150,chg:240,maxF:0.25,minsPerLoad:{grapple:30,bucket:22}}
 };
 let TRL_CF=336; // 16x7x3ft standard walls — updateable via wall height selector
-let DISP_COST=98.75; // overridden by R.dumpCost after loadSettings()
+let DISP_COST=92.10; // overridden by R.dumpCost after loadSettings()
 function selMat(mat){
   Object.keys(DEB_DATA).forEach(m=>{const c=$('mc-'+m);if(c)c.classList.remove('sel');});
   const c=$('mc-'+mat);if(c)c.classList.add('sel');
@@ -1542,7 +1589,7 @@ function calcDeb(){
   const dispCost=totTons*DISP_COST;
   const dispChg=totTons*md.chg;
   const machChg=mhrs*attRate;
-  const allTrips=loads*tripChg;
+  const allTrips=Math.max(0,loads-1)*tripChg; // extra dump runs only
   const sub=dispChg+machChg+allTrips;
   const heavy=tpl*2000>11000;
   $('deb-heavy').classList.toggle('show',heavy);
@@ -1578,7 +1625,7 @@ function autoCalcDem(mat, sf, thick) {
   return {bh, lh, lo};
 }
 function calcDem(){
-  if(!S.demOn){S.dem=0;S.demH=0;updAmt('dem',0,false,'');calcTot();return;}
+  if(!S.demOn){S.dem=0;S.demH=0;S.demDisp=0;updAmt('dem',0,false,'');calcTot();return;}
   const mat=sv('dem-mat');
   const sf=parseFloat(sv('dem-size'))||150;
   const thick=parseFloat(sv('dem-thick'))||1.0;
@@ -1598,12 +1645,26 @@ function calcDem(){
     if(loHint&&!loEl._manualOverride) loHint.textContent=`Auto: ${bh}hrs × ${DEM_LOADS_PER_BH[mat]||0.8} loads/hr = ${lo} load${lo>1?'s':''}`;
   } catch(e){}
   const trip=fv('dem-trip')||65;
-  const bl=bh*R.jack,ll=lh*R.grapple,haul=lo*DEM_HAUL[mat]+lo*trip;
+  // HAUL — facility-true: each load capped at 11,600 lb payload. Tons/load from material density.
+  const DENS={concrete:2200,asphalt:2150,structure:500,mixed:1200}; // lb/cy (broken/demo)
+  const PAYLOAD_CAP=11600; // lb per load
+  const tonsPerLoad=Math.min(PAYLOAD_CAP, (DENS[mat]||1200)*(336/27))/2000; // capped by weight
+  const fRate=facilityRate(mat);
+  const dispMargin=1.15;
+  const dispCostRaw=lo*tonsPerLoad*fRate;        // true dump cost across all loads
+  const dispCharge=dispCostRaw*dispMargin;        // customer charge with margin
+  // Trip charge = EXTRA dump runs only (loads beyond the first); first ride covered by mob
+  const demExtra=Math.max(0,lo-1);
+  const tripTotal=demExtra*trip;
+  const haul=dispCharge+tripTotal;
+  const bl=bh*R.jack,ll=lh*R.grapple;
   const sub=bl+ll+haul;
-  S.dem=sub;S.demH=bh+lh;
+  S.dem=sub;S.demH=bh+lh;S.demDisp=dispCostRaw;  // expose true cost for owner-profit panel
   $('dem-bl').textContent=fmt(bl);
   $('dem-ll').textContent=fmt(ll);
   $('dem-hl').textContent=fmt(haul);
+  const hh=$('dem-hl-hint');
+  if(hh)hh.textContent=lo+' load'+(lo>1?'s':'')+' × '+tonsPerLoad.toFixed(1)+'t × $'+fRate.toFixed(2)+'/t ('+(DUMP_FACILITIES[CUR_FACILITY]||{}).name+') ×1.15 + '+demExtra+' extra trip'+(demExtra===1?'':'s');
   $('dem-sub').textContent=fmt(sub);
   updAmt('dem',S.dem,S.demOn,'');calcTot();
 }
@@ -1630,6 +1691,14 @@ function calcTrn(){
 }
 // ── TOTAL ──
 function calcTot(){
+  {
+    const d=fv('dist'); let mf=0;
+    if(d>0 && typeof machineOnJob==='function' && machineOnJob()){
+      if(d<=15)mf=R.mob1;else if(d<=25)mf=R.mob2;else if(d<=35)mf=R.mob3;
+      else if(d<=45)mf=R.mob4;else if(d<=55)mf=R.mob5;else mf=R.mob6;
+    }
+    S.mob=mf; const md=$('mob-d'); if(md)md.textContent=fmt(mf);
+  }
   const sur=parseFloat(sv('sur'))||0,rush=parseFloat(sv('rush'))||0,misc=fv('misc');
   const cont=parseFloat(sv('cont'))/100,dep=parseFloat(sv('dep'))/100;
   const cashDiscPct=parseFloat(sv('cash-disc'))/100||0;
@@ -1714,15 +1783,21 @@ function calcTot(){
   $('r-dep-amt').textContent=depAmt>0?fmt(depAmt):'—';
   $('r-dep-row').style.display=depAmt>0?'flex':'none';
   // Profit
-  const totH=S.clrH+S.grvH+S.debH+S.demH+S.grdH+S.trnH;
+  const isResDeb = S.debOn && sv('deb-mode')==='residential';
+  const handH = isResDeb ? (S.debH||0) : 0;     // hand-load hrs: no machine running
+  const machH = (S.clrH+S.grvH+S.debH+S.demH+S.grdH+S.trnH) - handH;
+  const totH = machH + handH;
   const tripCostOf=(id)=>{const el=$(id);if(!el||el.value===''||el.value===null)return 65;const v=parseFloat(el.value);return isNaN(v)?65:v;};
-  const tripTotal=tripCostOf('deb-trip')*(fv('deb-loads')||1)*(S.debOn?1:0)
-                +tripCostOf('gv-trip')*Math.max(1,Math.ceil((fv('gv-tons')||1)/5))*(S.grvOn?1:0)
-                +tripCostOf('dem-trip')*(fv('dem-lo')||1)*(S.demOn?1:0);
+  // Trip charge = EXTRA dump runs only (loads beyond the first). First trip covered by mob/$65cy.
+  const extra=(n)=>Math.max(0,(n||1)-1);
+  const tripTotal=tripCostOf('deb-trip')*extra(fv('deb-loads')||1)*(S.debOn?1:0)
+                +tripCostOf('gv-trip')*extra(Math.max(1,Math.ceil((fv('gv-tons')||1)/5)))*(S.grvOn?1:0)
+                +tripCostOf('dem-trip')*extra(fv('dem-lo')||1)*(S.demOn?1:0);
   const teeth=S.clrTeeth||0;
-  const mach=totH*44,oper=totH*35,profit=total-mach-oper-S.debDisp-S.grvMat-S.mob-tripTotal-teeth;
+  // machine cost only on machine hours; operator wage on all hours (incl hand-load); demo+debris disposal both subtracted
+  const mach=machH*44,oper=totH*35,profit=total-mach-oper-S.debDisp-(S.demDisp||0)-S.grvMat-S.mob-tripTotal-teeth;
   $('p-mach').textContent=fmt(mach);$('p-oper').textContent=fmt(oper);
-  $('p-disp').textContent=fmt(S.debDisp);$('p-mat').textContent=fmt(S.grvMat);
+  $('p-disp').textContent=fmt(S.debDisp+(S.demDisp||0));$('p-mat').textContent=fmt(S.grvMat);
   $('p-trip').textContent=fmt(tripTotal);
   $('p-teeth').textContent=fmt(teeth);
   $('p-teeth-row').style.display=teeth>0?'flex':'none';
@@ -2249,7 +2324,7 @@ function getSubDiscount() {
 const SETTINGS_DEFAULTS = {
   bucket:150, brush:160, grapple:155, jack:175, trench:165,
   dispBrush:165, dispDirt:165, dispCd:215, dispStump:180, dispConc:240, dispAsph:215,
-  dumpCost:98.75, trip:65,
+  dumpCost:92.10, trip:65,
   mob1:75, mob2:125, mob3:175, mob4:225, mob5:250, mob6:300,
   demConc:750, demAsph:700, demStruct:500, demMixed:600,
   // Gravel quarry costs (your cost per ton)
@@ -2486,6 +2561,7 @@ const BASE_LNG = -97.9130;
 function saveApiKey() {} // kept for compatibility
 function loadSavedKey() {
   loadSettings(); // load saved rates from localStorage
+  if(typeof setFacility==='function'){ const fs=$('facility-sel'); setFacility(fs?fs.value:'cove'); }
   // Auto-show the address field as ready
   setApiStatus('on', 'Address lookup ready — type an address and click GET DIST');
   $('addr-hint').textContent = 'Type full address and click GET DIST to auto-calculate distance';
@@ -2801,10 +2877,14 @@ function calcDebRes() {
   const raw = cy * 65;
   const sub = cy > 0 ? Math.max(249, raw) : 0;
   const minApplied = cy > 0 && raw < 249;
-  // No machine charge in residential hand-load mode
+  // Customer price unaffected ($65/cy). Track REAL owner costs so profit isn't fictional:
+  const RES_DENS = 350;                         // lb/cy loose mixed household junk
+  const resTons = cy * RES_DENS / 2000;
+  const resDisp = resTons * DISP_COST;          // true dump cost @ current facility rate
+  const resLoadHrs = cy > 0 ? cy / 3.5 : 0;     // hand-load time estimate
   S.deb = sub;
-  S.debDisp = 0; // dump fees baked into $65/cy
-  S.debH = 0;    // no machine hours — hand load only
+  S.debDisp = resDisp;                          // real disposal cost to owner panel
+  S.debH = resLoadHrs;                          // hand-load hours (operator-only in profit)
   const rcEl = $('deb-res-calc');
   const rmEl = $('deb-res-min');
   const rsEl = $('deb-res-sub');
@@ -2904,7 +2984,7 @@ function resetF(){
     $('b-'+s).classList.remove('open');
     updAmt(s,0,false,'');
   });
-  S.mob=0;S.debDisp=0;S.grvMat=0;S.tripCost=0;
+  S.mob=0;S.debDisp=0;S.demDisp=0;S.grvMat=0;S.tripCost=0;
   ['cn','cp','ce','ja','jn','bp','excl','scale-actual'].forEach(id=>{$(id).value='';});
   $('dist').value='';$('mob-d').textContent='$0';
   $('qn').value='CHEW-'+Date.now().toString().slice(-5);
