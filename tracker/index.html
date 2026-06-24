@@ -851,6 +851,7 @@ body {
         <select class="filter-select" id="filter-type" onchange="renderJobsTable()">
           <option value="">All Job Types</option>
           <option value="clearing">Land Clearing</option>
+          <option value="trail">Trail Cutting</option>
           <option value="debris">Debris Removal</option>
           <option value="gravel">Gravel / Material</option>
           <option value="demo">Demolition</option>
@@ -1018,6 +1019,7 @@ body {
       <div class="f"><label>Job Type</label>
         <select id="j-type">
           <option value="clearing">Land Clearing</option>
+          <option value="trail">Trail Cutting</option>
           <option value="debris">Debris Removal</option>
           <option value="gravel">Gravel / Material</option>
           <option value="demo">Demolition</option>
@@ -1169,7 +1171,7 @@ const RAMP_PLAN = [
   {mo:'Mo 12', jobs:8, rev:163600},
 ];
 
-const JOB_TYPES = {clearing:'Land Clearing',debris:'Debris Removal',gravel:'Gravel / Material',demo:'Demolition',grading:'Grading / Site Prep',mowing:'Brush Hogging',other:'Other'};
+const JOB_TYPES = {clearing:'Land Clearing',trail:'Trail Cutting',debris:'Debris Removal',gravel:'Gravel / Material',demo:'Demolition',grading:'Grading / Site Prep',mowing:'Brush Hogging',other:'Other'};
 const SOURCES = {google:'Google',facebook:'Facebook',referral:'Referral',sign:'Yard Sign',repeat:'Repeat',nextdoor:'Nextdoor',other:'Other'};
 const ATTACHMENTS = {bucket:'Bucket',grapple:'Grapple',brush:'Brush Hog',planer:'Land Planer',jack:'Jackhammer',arm:'Digging Arm'};
 const EXP_CATS = {fuel:'Fuel',material:'Material/Gravel',maintenance:'Maintenance',disposal:'Disposal',insurance:'Insurance',vehicle:'Vehicle/Mileage',phone:'Phone/Software',professional:'Professional',marketing:'Marketing',supplies:'Supplies',equipment:'Equipment',other:'Other'};
