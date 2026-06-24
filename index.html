@@ -989,6 +989,45 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
     </div>
   </div>
 </div>
+
+<!-- TRAIL CUTTING -->
+<div class="panel off" id="p-trl">
+  <div class="ph" onclick="togSvc('trl')">
+    <div class="ph-left">
+      <div class="ptog" id="t-trl" onclick="event.stopPropagation();onOff('trl')">✓</div>
+      <div class="pt">Trail Cutting</div>
+      <div class="psub" id="s-trl"></div>
+    </div>
+    <div class="pamt z" id="a-trl">—</div>
+  </div>
+  <div class="pb" id="b-trl">
+    <div class="info">Carving a path/trail through wooded or brushy terrain. Priced per linear foot — width &amp; density drive the rate. Confirm trail route &amp; width on site.</div>
+    <div class="g3" style="margin-top:12px">
+      <div class="f"><label>Trail Length (linear ft)</label><input type="number" id="trl-l" placeholder="0" min="0" oninput="calcTrl()"></div>
+      <div class="f"><label>Density / Brush</label>
+        <select id="trl-den" onchange="calcTrl()">
+          <option value="1.0">Light — open woods / sparse</option>
+          <option value="1.25">Medium — mixed brush</option>
+          <option value="1.5">Heavy — thick brush / saplings</option>
+        </select>
+      </div>
+      <div class="f"><label>Terrain</label>
+        <select id="trl-ter" onchange="calcTrl()">
+          <option value="1.0">Flat</option>
+          <option value="1.15">Sloped</option>
+          <option value="1.5">Hilly</option>
+        </select>
+      </div>
+    </div>
+    <div class="g3">
+      <div><div class="cl">Base $10/ft</div><div class="cv sm" id="trl-br">$10/ft</div></div>
+      <div><div class="cl">Eff. Rate</div><div class="cv sm" id="trl-er">—</div></div>
+      <div><div class="cl">Trail Subtotal</div><div class="cv" id="trl-sub">—</div></div>
+    </div>
+    <div class="hint">$10/linear ft base · light/flat. Stacks density &amp; terrain multipliers. Min job floor ($950) still applies.</div>
+  </div>
+</div>
+
 <!-- TRENCHING -->
 <div class="panel off" id="p-trn" style="pointer-events:none;opacity:0.4;" title="Coming soon">
   <div class="ph" onclick="togSvc('trn')">
@@ -1224,6 +1263,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
   <div class="ps-l" id="psl-deb" style="display:none"><span class="psl">Debris &amp; Waste Removal</span><span class="psv" id="psv-deb">—</span></div>
   <div class="ps-l" id="psl-dem" style="display:none"><span class="psl">Demolition Cleanup</span><span class="psv" id="psv-dem">—</span></div>
   <div class="ps-l" id="psl-grd" style="display:none"><span class="psl">Grading / Site Prep</span><span class="psv" id="psv-grd">—</span></div>
+  <div class="ps-l" id="psl-trl" style="display:none"><span class="psl">Trail Cutting</span><span class="psv" id="psv-trl">—</span></div>
   <div class="ps-l" id="psl-trn" style="display:none"><span class="psl">Trenching / Digging Arm</span><span class="psv" id="psv-trn">—</span></div>
   <div class="ps-l" id="psl-rnt" style="display:none"><span class="psl">Rental Equipment</span><span class="psv" id="psv-rnt">—</span></div>
   <div class="ps-l" id="psl-sur" style="display:none"><span class="psl">Surcharges</span><span class="psv" id="psv-sur">—</span></div>
@@ -1269,6 +1309,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
   <div class="sl"><span class="sll">Debris Removal</span><span class="slv z" id="r-deb">—</span></div>
   <div class="sl"><span class="sll">Demolition</span><span class="slv z" id="r-dem">—</span></div>
   <div class="sl"><span class="sll">Grading / Site Prep</span><span class="slv z" id="r-grd">—</span></div>
+  <div class="sl"><span class="sll">Trail Cutting</span><span class="slv z" id="r-trl">—</span></div>
   <div class="sl"><span class="sll">Trenching</span><span class="slv z" id="r-trn">—</span></div>
   <div class="sl"><span class="sll">Rental Equipment</span><span class="slv z" id="r-rnt">—</span></div>
   <div class="sl"><span class="sll">Surcharges</span><span class="slv z" id="r-sur">—</span></div>
@@ -1333,9 +1374,9 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
 <script>
 // ── STATE ──
 const S={
-  mob:0,clr:0,grv:0,deb:0,dem:0,grd:0,trn:0,rnt:0,
-  clrOn:false,grvOn:false,debOn:false,demOn:false,grdOn:false,trnOn:false,rntOn:false,
-  clrH:0,grvH:0,debH:0,demH:0,grdH:0,trnH:0,clrTeeth:0,
+  mob:0,clr:0,grv:0,deb:0,dem:0,grd:0,trn:0,rnt:0,trl:0,
+  clrOn:false,grvOn:false,debOn:false,demOn:false,grdOn:false,trnOn:false,rntOn:false,trlOn:false,
+  clrH:0,grvH:0,debH:0,demH:0,grdH:0,trnH:0,trlH:0,clrTeeth:0,
   debDisp:0,demDisp:0,grvMat:0,tripCost:0,status:'ESTIMATE',selMat:'brush'
 };
 const $=id=>document.getElementById(id);
@@ -1374,6 +1415,7 @@ function recalc(s){
   else if(s==='dem')calcDem();
   else if(s==='grd')calcGrd();
   else if(s==='trn')calcTrn();
+  else if(s==='trl')calcTrl();
   else if(s==='rnt')calcRnt();
 }
 // ── STATUS ──
@@ -1431,7 +1473,7 @@ function facilityRate(mat){
 }
 // ── MOB ──
 function machineOnJob(){
-  if(S.clrOn||S.grvOn||S.demOn||S.grdOn||S.trnOn)return true;
+  if(S.clrOn||S.grvOn||S.demOn||S.grdOn||S.trnOn||S.trlOn)return true;
   if(S.debOn && sv('deb-mode')!=='residential')return true;
   if(S.debOn && sv('deb-mode')==='residential'){
     const nm=$('res-no-machine'); if(nm && !nm.checked)return true;
@@ -1451,9 +1493,9 @@ function calcMob(){
 // Brush Cut (Brush Hog): light/med held at $550 floor, heavy $740 (time exceeds floor)
 // Grapple/Bucket treated like brush-class clearing (same per-acre table) unless hauling
 const CLR_PERACRE={
-  brush:   {'1':550,'2':550,'3':740},
-  grapple: {'1':550,'2':550,'3':740},
-  bucket:  {'1':550,'2':550,'3':740},
+  brush:   {'1':550,'2':650,'3':750},
+  grapple: {'1':550,'2':650,'3':750},
+  bucket:  {'1':550,'2':650,'3':750},
   mulch:   {'1':1300,'2':1500,'3':2000}
 };
 const CLR_APH={'1':1.5,'2':1.0,'3':0.5};   // brush-class production hrs reference
@@ -1733,6 +1775,20 @@ function calcTrn(){
   $('trn-sub').textContent=l>0?fmt(sub):'—';
   updAmt('trn',S.trn,S.trnOn,l>0?h.toFixed(1)+' hrs':'');calcTot();
 }
+// ── TRAIL CUTTING ──
+function calcTrl(){
+  if(!S.trlOn){S.trl=0;S.trlH=0;updAmt('trl',0,false,'');calcTot();return;}
+  const l=fv('trl-l'),den=parseFloat(sv('trl-den'))||1.0,ter=parseFloat(sv('trl-ter'))||1.0;
+  const RATE=10; // $/linear ft base
+  const mx=den*ter;
+  const sub=l>0?l*RATE*mx:0;
+  // hours for the day-model: ~150 ft/hr light-flat, scaled by difficulty (drives 6-hr min check)
+  const h=l>0?(l/150)*mx:0;
+  S.trl=sub;S.trlH=h;
+  $('trl-er').textContent=l>0?'$'+(RATE*mx).toFixed(2)+'/ft eff.':'—';
+  $('trl-sub').textContent=l>0?fmt(sub):'—';
+  updAmt('trl',S.trl,S.trlOn,l>0?l+' ft':'');calcTot();
+}
 // ── TOTAL ──
 function calcTot(){
   {
@@ -1748,7 +1804,7 @@ function calcTot(){
   const cashDiscPct=parseFloat(sv('cash-disc'))/100||0;
   const subDiscPct=getSubDiscount();
   const surTotal=sur+rush+misc;
-  const base=S.mob+S.clr+S.grv+S.deb+S.dem+S.grd+S.trn+S.rnt+surTotal;
+  const base=S.mob+S.clr+S.grv+S.deb+S.dem+S.grd+S.trn+S.rnt+S.trl+surTotal;
   const contAmt=base*cont;
   let total=base+contAmt;
   // Dynamic job floor: $249 when residential debris is the ONLY active section
@@ -1756,13 +1812,13 @@ function calcTot(){
   // 6-HOUR MACHINE-DAY MINIMUM — no machine job is billed under 6 hrs of time,
   // even if the calculated work is shorter. Goes higher when work exceeds 6 hrs,
   // never lower. Material/disposal costs sit on top of the time floor.
-  const debOnly=S.debOn&&!S.clrOn&&!S.grvOn&&!S.demOn&&!S.grdOn&&!S.trnOn&&!S.rntOn;
+  const debOnly=S.debOn&&!S.clrOn&&!S.grvOn&&!S.demOn&&!S.grdOn&&!S.trnOn&&!S.rntOn&&!S.trlOn;
   const MIN_HRS=6;
   // Hourly 6-hr minimum applies ONLY to hourly-priced sections (gravel/demo/grading/trenching).
   // CLEARING is now priced PER-ACRE (its per-acre rate + the $950 job floor are its floor),
   // so clearing hours are EXCLUDED here to avoid double-charging on top of the per-acre price.
-  const hourlyHrs=S.grvH+S.demH+S.grdH+S.trnH;   // clearing (S.clrH) deliberately excluded
-  const hourlyOn=S.grvOn||S.demOn||S.grdOn||S.trnOn;
+  const hourlyHrs=S.grvH+S.demH+S.grdH+S.trnH+S.trlH;   // clearing (S.clrH) excluded; trail counts
+  const hourlyOn=S.grvOn||S.demOn||S.grdOn||S.trnOn||S.trlOn;
   let minDayAdj=0;
   if(hourlyOn&&hourlyHrs>0&&hourlyHrs<MIN_HRS){
     // Bill the shortfall hours at a representative machine rate (bucket rate)
@@ -1807,7 +1863,7 @@ function calcTot(){
   $('r-mob').textContent=fmt(S.mob);
   setRV('r-clr',S.clr,S.clrOn);setRV('r-grv',S.grv,S.grvOn);
   setRV('r-deb',S.deb,S.debOn);setRV('r-dem',S.dem,S.demOn);
-  setRV('r-grd',S.grd,S.grdOn);setRV('r-trn',S.trn,S.trnOn);setRV('r-rnt',S.rnt,S.rntOn);
+  setRV('r-grd',S.grd,S.grdOn);setRV('r-trl',S.trl,S.trlOn);setRV('r-trn',S.trn,S.trnOn);setRV('r-rnt',S.rnt,S.rntOn);
   if(surTotal>0){$('r-sur').textContent=fmt(surTotal);$('r-sur').classList.remove('z');}
   else{$('r-sur').textContent='—';$('r-sur').classList.add('z');}
   if(contAmt>0){$('r-con').textContent=fmt(contAmt);$('r-con').classList.remove('z');}
@@ -1829,7 +1885,7 @@ function calcTot(){
   // Profit
   const isResDeb = S.debOn && sv('deb-mode')==='residential';
   const handH = isResDeb ? (S.debH||0) : 0;     // hand-load hrs: no machine running
-  const machH = (S.clrH+S.grvH+S.debH+S.demH+S.grdH+S.trnH) - handH;
+  const machH = (S.clrH+S.grvH+S.debH+S.demH+S.grdH+S.trnH+S.trlH) - handH;
   const totH = machH + handH;
   const tripCostOf=(id)=>{const el=$(id);if(!el||el.value===''||el.value===null)return 65;const v=parseFloat(el.value);return isNaN(v)?65:v;};
   // Trip charge = EXTRA dump runs only (loads beyond the first). First trip covered by mob/$65cy.
@@ -1880,7 +1936,7 @@ function updPS(total,cont,sur,dep){
   setPSL('psl-deb','psv-deb',S.deb,S.debOn);
   setPSL('psl-dem','psv-dem',S.dem,S.demOn);
   setPSL('psl-grd','psv-grd',S.grd,S.grdOn);
-  setPSL('psl-trn','psv-trn',S.trn,S.trnOn);
+  setPSL('psl-trl','psv-trl',S.trl,S.trlOn);setPSL('psl-trn','psv-trn',S.trn,S.trnOn);
   setPSL('psl-rnt','psv-rnt',S.rnt,S.rntOn);
   if(sur>0){$('psl-sur').style.display='flex';$('psv-sur').textContent=fmt(sur);}
   else $('psl-sur').style.display='none';
@@ -1925,11 +1981,12 @@ function buildLineRows() {
   if(S.debOn&&S.deb>0) rows.push(tr('Debris &amp; Waste Removal', fmt(S.deb), S.debH ? S.debH.toFixed(1)+' hrs loading' : ''));
   if(S.demOn&&S.dem>0) rows.push(tr('Demolition Cleanup', fmt(S.dem), S.demH ? S.demH.toFixed(1)+' hrs' : ''));
   if(S.grdOn&&S.grd>0) rows.push(tr('Grading / Site Prep', fmt(S.grd), S.grdH ? S.grdH.toFixed(1)+' hrs @ $'+R.bucket+'/hr' : ''));
+  if(S.trlOn&&S.trl>0) rows.push(tr('Trail Cutting', fmt(S.trl), (fv('trl-l')||0)+' linear ft'));
   if(S.trnOn&&S.trn>0) rows.push(tr('Trenching / Digging Arm', fmt(S.trn), S.trnH ? S.trnH.toFixed(1)+' hrs @ $'+R.trench+'/hr' : ''));
   const sur=(parseFloat(sv('sur'))||0)+(parseFloat(sv('rush'))||0)+fv('misc');
   if(sur>0) rows.push(tr('Surcharges', fmt(sur)));
   const cont=parseFloat(sv('cont'))/100;
-  const base=S.mob+S.clr+S.grv+S.deb+S.dem+S.grd+S.trn+sur;
+  const base=S.mob+S.clr+S.grv+S.deb+S.dem+S.grd+S.trn+S.trl+sur;
   const contAmt=base*cont;
   // Contingency rolled into total — not shown as line item on email
   const cashDiscPct = parseFloat(sv('cash-disc'))/100||0;
@@ -2167,6 +2224,7 @@ function copyProposalData(){
   if(S.grvOn) out+='SERVICE: Gravel / Driveway (see estimator for details)\n';
   if(S.demOn) out+='SERVICE: Demolition (see estimator for details)\n';
   if(S.grdOn) out+='SERVICE: Grading (see estimator for details)\n';
+  if(S.trlOn) out+='SERVICE: Trail Cutting ('+(fv('trl-l')||0)+' linear ft)\n';
   out+='PRICE (as scoped): '+(total||'$0')+'\n';
   out+='Note: Minimum job price applies. Mobilization included per distance band.\n';
   out+='\n[Access, trees to keep, customer goal, and any special notes — see transcript.]';
@@ -2233,6 +2291,7 @@ function saveToTracker() {
     // Determine primary job type from active sections
     let jobType = 'other';
     if (S.clrOn) jobType = 'clearing';
+    else if (S.trlOn) jobType = 'trail';
     else if (S.debOn) jobType = 'debris';
     else if (S.grvOn) jobType = 'gravel';
     else if (S.demOn) jobType = 'demo';
@@ -2244,7 +2303,9 @@ function saveToTracker() {
       if (att === 'brush') attachments.push('brush');
       else if (att === 'grapple') attachments.push('grapple');
       else if (att === 'bucket') attachments.push('bucket');
+      else if (att === 'mulch') attachments.push('mulch');
     }
+    if (S.trlOn) attachments.push('mulch');
     if (S.debOn) {
       const att = document.getElementById('deb-att')?.value;
       if (att) attachments.push(att);
@@ -2256,7 +2317,7 @@ function saveToTracker() {
       if (att) attachments.push(att === String(R.trench) ? 'planer' : att === String(R.grapple) ? 'grapple' : 'bucket');
     }
     // Estimated hours
-    const hrsEst = (S.clrH||0) + (S.debH||0) + (S.demH||0) + (S.grdH||0);
+    const hrsEst = (S.clrH||0) + (S.grvH||0) + (S.debH||0) + (S.demH||0) + (S.grdH||0) + (S.trnH||0) + (S.trlH||0);
     // Cost breakdown
     const costMat = S.grvMat || 0;
     const costDisp = S.debDisp || 0;
@@ -2589,7 +2650,7 @@ function saveSettings() {
   // Update default trip charge inputs
   document.querySelectorAll('input[id$="-trip"]').forEach(el => { if(!el._userEdited) el.value = R.trip; });
   // Recalc everything
-  calcMob(); ['clr','grv','deb','dem','grd','trn','rnt'].forEach(s => { if(S[s+'On']) recalc(s); });
+  calcMob(); ['clr','grv','deb','dem','grd','trn','rnt','trl'].forEach(s => { if(S[s+'On']) recalc(s); });
   alert('✅ Rates saved! All calculations updated.');
   closeSettings();
 }
@@ -2797,6 +2858,7 @@ ${S.grvOn&&S.grv>0?`<tr><td>Gravel / Material Spreading</td><td>$${S.grv.toLocal
 ${S.debOn&&S.deb>0?`<tr><td>Debris & Waste Removal</td><td>$${S.deb.toLocaleString()}</td></tr>`:''}
 ${S.demOn&&S.dem>0?`<tr><td>Demolition Cleanup</td><td>$${S.dem.toLocaleString()}</td></tr>`:''}
 ${S.grdOn&&S.grd>0?`<tr><td>Grading / Site Prep</td><td>$${S.grd.toLocaleString()}</td></tr>`:''}
+${S.trlOn&&S.trl>0?`<tr><td>Trail Cutting</td><td>$${S.trl.toLocaleString()}</td></tr>`:''}
 ${S.trnOn&&S.trn>0?`<tr><td>Trenching / Digging Arm</td><td>$${S.trn.toLocaleString()}</td></tr>`:''}
 </table>
 <div class="tot">TOTAL: ${total}</div>
@@ -3021,7 +3083,7 @@ function calcRnt() {
 
 function resetF(){
   if(!confirm('Clear all data and start a new quote?'))return;
-  ['clr','grv','deb','dem','grd','trn','rnt'].forEach(s=>{
+  ['clr','grv','deb','dem','grd','trn','rnt','trl'].forEach(s=>{
     S[s]=0;S[s+'On']=false;S[s+'H']=0;
     $('t-'+s).classList.remove('on');
     $('p-'+s).classList.remove('off');
