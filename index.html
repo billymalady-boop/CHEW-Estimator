@@ -678,26 +678,10 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
     <div class="pamt z" id="a-grv">—</div>
   </div>
   <div class="pb" id="b-grv">
-    <div class="g4">
+    <div class="info">Driveway footprint (length × width is shared). Base layer goes down first; add a surface layer for a finished, longer-lasting drive — shown as a separate line the customer can opt into.</div>
+    <div class="g3" style="margin-top:10px">
       <div class="f"><label>Length (ft)</label><input type="number" id="gv-l" placeholder="0" oninput="calcGrv()"></div>
       <div class="f"><label>Width (ft)</label><input type="number" id="gv-w" placeholder="0" oninput="calcGrv()"></div>
-      <div class="f"><label>Depth (inches)</label><input type="number" id="gv-d" value="4" oninput="calcGrv()"></div>
-      <div><div class="cl">Calc. Tons Needed</div><div class="cv" id="gv-tons">—</div></div>
-    </div>
-    <div class="g3">
-      <div class="f"><label>Material Type</label>
-        <select id="gv-mat" onchange="calcGrv()">
-          <option value="flexbase">Flex Base / Crusher Run</option>
-          <option value="crushed">¾" Crushed Limestone</option>
-          <option value="screenings">Screenings / Fines</option>
-          <option value="caliche">Caliche Base</option>
-          <option value="custom">Custom (enter price below)</option>
-        </select>
-      </div>
-      <div class="f"><label>Your Quarry Cost ($/ton) — leave blank for settings default</label>
-        <input type="number" id="gv-cost" placeholder="Leave blank = use Settings rate" step="0.50" oninput="calcGrv()">
-        <div class="hint" id="gv-cost-hint">Blank = use rate from ⚙ Settings · enter a number only to override for this job</div>
-      </div>
       <div class="f"><label>Surface Condition</label>
         <select id="gv-cond" onchange="calcGrv()">
           <option value="0">Good — top dress only</option>
@@ -706,20 +690,77 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
         </select>
       </div>
     </div>
-    <div class="f"><label>Trip Charge Per Load ($/load — default $65)</label>
+
+    <!-- BASE LAYER -->
+    <div style="margin-top:10px;padding:8px;background:#161616;border:1px solid #333;border-radius:4px;">
+      <div style="font-size:12px;color:#F5C400;font-weight:bold;margin-bottom:6px;">LAYER 1 — ROAD BASE (structural foundation)</div>
+      <div class="g3">
+        <div class="f"><label>Base Material</label>
+          <select id="gv-mat" onchange="calcGrv()">
+            <option value="flexbase">Flex Base / Crusher Run</option>
+            <option value="caliche">Caliche Base</option>
+            <option value="crushed">¾" Crushed Limestone</option>
+            <option value="custom">Custom (enter price below)</option>
+          </select>
+        </div>
+        <div class="f"><label>Base Depth (inches)</label><input type="number" id="gv-d" value="4" oninput="calcGrv()"></div>
+        <div class="f"><label>Base Quarry Cost ($/ton) — blank = settings</label>
+          <input type="number" id="gv-cost" placeholder="Blank = settings rate" step="0.50" oninput="calcGrv()">
+        </div>
+      </div>
+      <div class="g4" style="margin-top:6px">
+        <div><div class="cl">Base Tons</div><div class="cv sm" id="gv-tons">—</div></div>
+        <div><div class="cl">Loads</div><div class="cv sm" id="gv-loads">—</div></div>
+        <div><div class="cl">Base Material Chg</div><div class="cv sm" id="gv-mc">—</div></div>
+        <div><div class="cl">Base Subtotal</div><div class="cv sm" id="gv-base-sub">—</div></div>
+      </div>
+    </div>
+
+    <!-- SURFACE LAYER TOGGLE -->
+    <div style="margin-top:8px;padding:8px;background:#161616;border:1px solid #333;border-radius:4px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#4CAF50;">
+        <input type="checkbox" id="gv-surf-on" onchange="toggleSurfaceLayer();calcGrv()" style="width:16px;height:16px;">
+        ADD SURFACE LAYER (the upsell — finished look, longer-lasting drive)
+      </label>
+      <div id="gv-surf-fields" style="display:none;margin-top:8px;">
+        <div style="font-size:12px;color:#F5C400;font-weight:bold;margin-bottom:6px;">LAYER 2 — SURFACE GRAVEL</div>
+        <div class="g3">
+          <div class="f"><label>Surface Material</label>
+            <select id="gv-smat" onchange="calcGrv()">
+              <option value="crushed">¾" Crushed Limestone</option>
+              <option value="screenings">Screenings / Fines</option>
+              <option value="flexbase">Flex Base / Crusher Run</option>
+              <option value="custom">Custom (enter price below)</option>
+            </select>
+          </div>
+          <div class="f"><label>Surface Depth (inches)</label><input type="number" id="gv-sd" value="2" oninput="calcGrv()"></div>
+          <div class="f"><label>Surface Quarry Cost ($/ton) — blank = settings</label>
+            <input type="number" id="gv-scost" placeholder="Blank = settings rate" step="0.50" oninput="calcGrv()">
+          </div>
+        </div>
+        <div class="g4" style="margin-top:6px">
+          <div><div class="cl">Surface Tons</div><div class="cv sm" id="gv-stons">—</div></div>
+          <div><div class="cl">Loads</div><div class="cv sm" id="gv-sloads">—</div></div>
+          <div><div class="cl">Surface Material Chg</div><div class="cv sm" id="gv-smc">—</div></div>
+          <div><div class="cl">Surface Subtotal</div><div class="cv sm" id="gv-surf-sub">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="f" style="margin-top:8px"><label>Trip Charge Per Load ($/load — default $65)</label>
       <input type="number" id="gv-trip" value="65" min="0" oninput="this._userEdited=true;calcGrv()">
-      <div class="hint">Covers your drive to quarry + return per 5-ton load · edit if quarry is farther</div>
+      <div class="hint">Covers drive to quarry + return per load · base &amp; surface trips counted separately (extra loads only)</div>
     </div>
     <div class="g4">
-      <div><div class="cl">Loads (~5t ea)</div><div class="cv sm" id="gv-loads">—</div></div>
-      <div><div class="cl">Material Charge</div><div class="cv sm" id="gv-mc">—</div></div>
+      <div><div class="cl">Total Loads</div><div class="cv sm" id="gv-totloads">—</div></div>
       <div><div class="cl">Trip Charges</div><div class="cv sm" id="gv-tc">—</div></div>
       <div><div class="cl">Spread &amp; Grade</div><div class="cv sm" id="gv-sc">—</div></div>
+      <div><div class="cl">Total Tons</div><div class="cv sm" id="gv-tottons">—</div></div>
     </div>
     <div style="margin-top:10px"><div class="cl">Gravel Job Subtotal</div><div class="cv" id="gv-sub">—</div></div>
     <div class="g2" style="margin-top:10px">
       <div><div class="cl">Your Material Cost (actual)</div><div class="cv sm" style="color:var(--muted)" id="gv-matcost">—</div></div>
-      <div class="f"><label>Customer-facing note (optional)</label><input type="text" id="gv-note" placeholder="e.g. Includes 2 loads flex base, spread and graded..."></div>
+      <div class="f"><label>Customer-facing note (optional)</label><input type="text" id="gv-note" placeholder="e.g. 4&quot; flex base + 2&quot; crushed surface, spread and graded..."></div>
     </div>
   </div>
 </div>
@@ -1377,6 +1418,7 @@ const S={
   mob:0,clr:0,grv:0,deb:0,dem:0,grd:0,trn:0,rnt:0,trl:0,
   clrOn:false,grvOn:false,debOn:false,demOn:false,grdOn:false,trnOn:false,rntOn:false,trlOn:false,
   clrH:0,grvH:0,debH:0,demH:0,grdH:0,trnH:0,trlH:0,clrTeeth:0,
+  grvBase:0,grvSurf:0,grvBaseTons:0,grvSurfTons:0,grvBaseMat:'',grvSurfMat:'',
   debDisp:0,demDisp:0,grvMat:0,tripCost:0,status:'ESTIMATE',selMat:'brush'
 };
 const $=id=>document.getElementById(id);
@@ -1502,8 +1544,8 @@ const CLR_APH={'1':1.5,'2':1.0,'3':0.5};   // brush-class production hrs referen
 const CLR_RATE={brush:160,grapple:155,bucket:150};
 // SP-900 forestry mulcher production in ACRES PER DAY by density (for hours/teeth calc)
 const MUL_APD={'1':2.0,'2':1.2,'3':0.8};
-const MUL_RATE=200;      // legacy hourly ref (hours calc only; price now per-acre table)
-const MUL_TEETH=14;      // teeth-wear accrual $/hr — OWNER VIEW ONLY, never in customer price
+const MUL_RATE=350;      // legacy hourly ref (hours calc only; price now per-acre table)
+const MUL_TEETH=10.77;      // teeth-wear accrual $/hr — OWNER VIEW ONLY, never in customer price
 const MUL_DAYHRS=8;
 function toggleMixedTerrain(){
   const on=$('clr-mixed')&&$('clr-mixed').checked;
@@ -1569,42 +1611,80 @@ function calcClr(){
 // ── GRAVEL ──
 const GV_DEF_COST={flexbase:16,crushed:18,screenings:14,caliche:12,custom:0};
 let GV_MARKUP=1.3;
+function gvMatName(m){
+  const names={flexbase:'Flex Base',crushed:'¾" Crushed Limestone',screenings:'Screenings',caliche:'Caliche Base',custom:'Gravel'};
+  return names[m]||'Gravel';
+}
+function toggleSurfaceLayer(){
+  const on=$('gv-surf-on')&&$('gv-surf-on').checked;
+  const f=$('gv-surf-fields'); if(f)f.style.display=on?'block':'none';
+}
 function calcGrv(){
   if(!S.grvOn){S.grv=0;S.grvH=0;S.grvMat=0;updAmt('grv',0,false,'');calcTot();return;}
-  const l=fv('gv-l'),w=fv('gv-w'),d=fv('gv-d'),mat=sv('gv-mat'),cond=parseFloat(sv('gv-cond'))||0;
+  const l=fv('gv-l'),w=fv('gv-w'),cond=parseFloat(sv('gv-cond'))||0;
   const tripChgRaw=$('gv-trip')&&$('gv-trip').value!==''?parseFloat($('gv-trip').value):65;
   const tripChg=isNaN(tripChgRaw)?65:tripChgRaw;
-  // Cost per ton — user override or default
-  const customCost=fv('gv-cost');
-  const costTon=customCost>0?customCost:(GV_DEF_COST[mat]||16);
-  const chargeTon=costTon*GV_MARKUP;
-  // Density by material type (lbs/cf)
   const GV_DENSITY={flexbase:110,crushed:110,screenings:90,caliche:95,custom:100};
-  const density=GV_DENSITY[mat]||100;
-  const vol_cf=l*w*(d/12);
-  const tons_raw=(vol_cf*density)/2000;
-  const tons=Math.round(tons_raw*1.10*10)/10; // +10% waste factor
-  const loads=Math.max(1,Math.ceil(tons/5));
-  const matChg=tons*chargeTon;
-  const trips=Math.max(0,loads-1)*tripChg; // extra dump runs only
-  // Spread hours: ~1.5hr per 1000sf (spread + grade + crown), 3hr minimum, rounded UP to nearest 0.5hr
   const sf=l*w;
-  const spdHraw=Math.max(3,sf/1000*1.5);
-  const spdH=Math.ceil(spdHraw*2)/2;
+  const surfOn=$('gv-surf-on')&&$('gv-surf-on').checked;
+
+  // helper: compute one layer's tonnage/cost/charge
+  function layer(mat,depth,costOverride){
+    const density=GV_DENSITY[mat]||100;
+    const costTon=costOverride>0?costOverride:(GV_DEF_COST[mat]||16);
+    const chargeTon=costTon*GV_MARKUP;
+    const vol_cf=l*w*(depth/12);
+    const tons=Math.round(((vol_cf*density)/2000)*1.10*10)/10; // +10% waste
+    const loads=tons>0?Math.max(1,Math.ceil(tons/5)):0;
+    return {tons,loads,matChg:tons*chargeTon,matCost:tons*costTon,costTon};
+  }
+
+  // LAYER 1 — base
+  const base=layer(sv('gv-mat'),fv('gv-d'),fv('gv-cost'));
+  // LAYER 2 — surface (only if toggled)
+  const surf=surfOn?layer(sv('gv-smat'),fv('gv-sd'),fv('gv-scost')):{tons:0,loads:0,matChg:0,matCost:0,costTon:0};
+
+  const totLoads=base.loads+surf.loads;
+  const totTons=base.tons+surf.tons;
+  const matChg=base.matChg+surf.matChg;
+  const matCost=base.matCost+surf.matCost;
+  // Trips: extra dump runs only (total loads beyond the first)
+  const trips=Math.max(0,totLoads-1)*tripChg;
+  // Spread: base = 1.5hr/1000sf (3hr min). Surface = a SECOND grade/crown pass (+1.0hr/1000sf, 2hr min) when present.
+  const baseSpdH=Math.ceil(Math.max(3,sf/1000*1.5)*2)/2;
+  const surfSpdH=surfOn?Math.ceil(Math.max(2,sf/1000*1.0)*2)/2:0;
+  const spdH=baseSpdH+surfSpdH;
   const spdChg=spdH*R.gvSpread+cond;
+
+  const baseSub=base.matChg;
+  const surfSub=surf.matChg;
   const sub=matChg+trips+spdChg;
-  const matCost=tons*costTon;
+
   S.grv=l>0?sub:0;S.grvH=l>0?spdH:0;S.grvMat=l>0?matCost:0;
-  $('gv-tons').textContent=l>0?tons.toFixed(1)+' t':'—';
-  $('gv-loads').textContent=l>0?loads+(loads===1?' load':' loads'):'—';
-  $('gv-mc').textContent=l>0?fmt(matChg):'—';
+  // base layer display
+  $('gv-tons').textContent=l>0?base.tons.toFixed(1)+' t':'—';
+  $('gv-loads').textContent=l>0?base.loads+(base.loads===1?' load':' loads'):'—';
+  $('gv-mc').textContent=l>0?fmt(base.matChg):'—';
+  $('gv-base-sub').textContent=l>0?fmt(baseSub):'—';
+  // surface layer display
+  if($('gv-stons')){
+    $('gv-stons').textContent=surfOn&&l>0?surf.tons.toFixed(1)+' t':'—';
+    $('gv-sloads').textContent=surfOn&&l>0?surf.loads+(surf.loads===1?' load':' loads'):'—';
+    $('gv-smc').textContent=surfOn&&l>0?fmt(surf.matChg):'—';
+    $('gv-surf-sub').textContent=surfOn&&l>0?fmt(surfSub):'—';
+  }
+  // totals
+  $('gv-totloads').textContent=l>0?totLoads+(totLoads===1?' load':' loads'):'—';
+  $('gv-tottons').textContent=l>0?totTons.toFixed(1)+' t':'—';
   $('gv-tc').textContent=l>0?fmt(trips):'—';
-  $('gv-sc').textContent=l>0?fmt(spdChg):'—';
+  $('gv-sc').textContent=l>0?fmt(spdChg)+' ('+spdH+'hr)':'—';
   $('gv-sub').textContent=l>0?fmt(sub):'—';
-  $('gv-matcost').textContent=l>0?fmt(matCost)+' @ $'+costTon.toFixed(2)+'/t (your cost)':'—';
-  const hint=$('gv-cost-hint');
-  if(hint) hint.textContent=customCost>0?'Override active: $'+customCost+'/t':'Using Settings rate: $'+costTon.toFixed(2)+'/t for '+mat+' · enter a number to override for this job';
-  updAmt('grv',S.grv,S.grvOn,l>0?tons.toFixed(1)+'t':'');
+  $('gv-matcost').textContent=l>0?fmt(matCost)+' (your cost)':'—';
+  // store layer breakdown for proposal/quote display
+  S.grvBase=l>0?baseSub:0; S.grvSurf=surfOn&&l>0?surfSub:0;
+  S.grvBaseTons=base.tons; S.grvSurfTons=surf.tons;
+  S.grvBaseMat=sv('gv-mat'); S.grvSurfMat=surfOn?sv('gv-smat'):'';
+  updAmt('grv',S.grv,S.grvOn,l>0?totTons.toFixed(1)+'t':'');
   calcTot();
 }
 // ── DEBRIS ──
@@ -1828,7 +1908,18 @@ function calcTot(){
   }
   // Dollar floor: machine jobs $950 (build spec), debris-only $249.
   // This is what protects small CLEARING jobs (per-acre price floored up to $950).
-  const jobFloor=debOnly?249:950;
+  // Machine-job floor = a viable 6-hour day. Flexes by the work type's hourly rate:
+  //  - Mulching (SP-900): 6 × $350 = $2,100
+  //  - Other clearing/machine work (brush/grapple/bucket/grading): 6 × ~$155 ≈ $950
+  //  - Debris-only (hand-load junk): $249, not a machine day
+  let jobFloor;
+  if(debOnly){
+    jobFloor=249;
+  } else if(S.clrOn && sv('clr-att')==='mulch'){
+    jobFloor=Math.round(6*MUL_RATE);   // 6-hr mulching day @ $350 = $2,100
+  } else {
+    jobFloor=950;                      // 6-hr day @ ~$155 brush/grapple/bucket rate
+  }
   const minHit=(total>0&&total<jobFloor)||minDayAdj>0;
   if(total>0&&total<jobFloor)total=jobFloor;
   // Apply subscriber discount first
@@ -1977,7 +2068,16 @@ function buildLineRows() {
   };
   if(S.mob>0) rows.push(tr('Mobilization', fmt(S.mob)));
   if(S.clrOn&&S.clr>0) rows.push(tr('Land Clearing / Brush Hogging', fmt(S.clr), S.clrH ? S.clrH.toFixed(1)+' hrs' : ''));
-  if(S.grvOn&&S.grv>0) rows.push(tr('Gravel / Material Spreading', fmt(S.grv)));
+  if(S.grvOn&&S.grv>0){
+    if(S.grvSurf>0){
+      // two-layer: show base + surface as separate lines, then trip/spread folded into base line's section
+      rows.push(tr('Gravel Driveway — Road Base ('+gvMatName(S.grvBaseMat)+')', fmt(S.grvBase), S.grvBaseTons.toFixed(1)+' tons'));
+      rows.push(tr('Gravel Driveway — Surface ('+gvMatName(S.grvSurfMat)+')', fmt(S.grvSurf), S.grvSurfTons.toFixed(1)+' tons'));
+      rows.push(tr('Gravel Driveway — Haul & Spread/Grade', fmt(S.grv-S.grvBase-S.grvSurf), 'delivery, spread, grade & crown'));
+    } else {
+      rows.push(tr('Gravel / Material Spreading', fmt(S.grv)));
+    }
+  }
   if(S.debOn&&S.deb>0) rows.push(tr('Debris &amp; Waste Removal', fmt(S.deb), S.debH ? S.debH.toFixed(1)+' hrs loading' : ''));
   if(S.demOn&&S.dem>0) rows.push(tr('Demolition Cleanup', fmt(S.dem), S.demH ? S.demH.toFixed(1)+' hrs' : ''));
   if(S.grdOn&&S.grd>0) rows.push(tr('Grading / Site Prep', fmt(S.grd), S.grdH ? S.grdH.toFixed(1)+' hrs @ $'+R.bucket+'/hr' : ''));
@@ -2221,7 +2321,15 @@ function copyProposalData(){
     out+='\n';
   }
   if(S.debOn) out+='SERVICE: Debris / Cleanout (see estimator for details)\n';
-  if(S.grvOn) out+='SERVICE: Gravel / Driveway (see estimator for details)\n';
+  if(S.grvOn){
+    if(S.grvSurf>0){
+      out+='SERVICE: Gravel Driveway (two-layer)\n';
+      out+='  Layer 1 - Road Base: '+gvMatName(S.grvBaseMat)+', '+S.grvBaseTons.toFixed(1)+' tons\n';
+      out+='  Layer 2 - Surface: '+gvMatName(S.grvSurfMat)+', '+S.grvSurfTons.toFixed(1)+' tons\n';
+    } else {
+      out+='SERVICE: Gravel / Driveway (see estimator for details)\n';
+    }
+  }
   if(S.demOn) out+='SERVICE: Demolition (see estimator for details)\n';
   if(S.grdOn) out+='SERVICE: Grading (see estimator for details)\n';
   if(S.trlOn) out+='SERVICE: Trail Cutting ('+(fv('trl-l')||0)+' linear ft)\n';
@@ -2869,7 +2977,11 @@ td,th{padding:8px 12px;border:1px solid #ddd;text-align:left;}th{background:#f5f
 <tr><th>Service</th><th>Amount</th></tr>
 <tr><td>Mobilization</td><td>$${S.mob.toLocaleString()}</td></tr>
 ${S.clrOn&&S.clr>0?`<tr><td>Land Clearing / Brush Hogging</td><td>$${S.clr.toLocaleString()}</td></tr>`:''}
-${S.grvOn&&S.grv>0?`<tr><td>Gravel / Material Spreading</td><td>$${S.grv.toLocaleString()}</td></tr>`:''}
+${S.grvOn&&S.grv>0?(S.grvSurf>0?
+  `<tr><td>Gravel Driveway — Road Base (${gvMatName(S.grvBaseMat)}, ${S.grvBaseTons.toFixed(1)} tons)</td><td>$${S.grvBase.toLocaleString()}</td></tr>`+
+  `<tr><td>Gravel Driveway — Surface (${gvMatName(S.grvSurfMat)}, ${S.grvSurfTons.toFixed(1)} tons)</td><td>$${S.grvSurf.toLocaleString()}</td></tr>`+
+  `<tr><td>Gravel Driveway — Haul & Spread/Grade</td><td>$${(S.grv-S.grvBase-S.grvSurf).toLocaleString()}</td></tr>`
+  :`<tr><td>Gravel / Material Spreading</td><td>$${S.grv.toLocaleString()}</td></tr>`):''}
 ${S.debOn&&S.deb>0?`<tr><td>Debris & Waste Removal</td><td>$${S.deb.toLocaleString()}</td></tr>`:''}
 ${S.demOn&&S.dem>0?`<tr><td>Demolition Cleanup</td><td>$${S.dem.toLocaleString()}</td></tr>`:''}
 ${S.grdOn&&S.grd>0?`<tr><td>Grading / Site Prep</td><td>$${S.grd.toLocaleString()}</td></tr>`:''}
