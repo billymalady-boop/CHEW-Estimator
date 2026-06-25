@@ -1500,7 +1500,7 @@ const CLR_PERACRE={
 };
 const CLR_APH={'1':1.5,'2':1.0,'3':0.5};   // brush-class production hrs reference
 const CLR_RATE={brush:160,grapple:155,bucket:150};
-// SP-500 forestry mulcher production in ACRES PER DAY by density (for hours/teeth calc)
+// SP-900 forestry mulcher production in ACRES PER DAY by density (for hours/teeth calc)
 const MUL_APD={'1':2.0,'2':1.2,'3':0.8};
 const MUL_RATE=200;      // legacy hourly ref (hours calc only; price now per-acre table)
 const MUL_TEETH=14;      // teeth-wear accrual $/hr — OWNER VIEW ONLY, never in customer price
@@ -2195,7 +2195,7 @@ function copyProposalData(){
   const denMap={'1':'Sparse (L1)','2':'Moderate (L2)','3':'Heavy (L3)'};
   const terMap={'1.0':'Flat','1.15':'Sloped','1.3':'Hilly'};
   const rckMap={'1.0':'No Rock','1.2':'Caliche','1.4':'Heavy Rock'};
-  const attMap={'brush':'Brush Cut (Brush Hog)','grapple':'Grapple','bucket':'Bucket','mulch':'Mulch In Place (SP-500)'};
+  const attMap={'brush':'Brush Cut (Brush Hog)','grapple':'Grapple','bucket':'Bucket','mulch':'Mulch In Place (SP-900)'};
   const debMap={'mulch':'Mulched in place — left as ground cover','burn':'Piled on property — customer burns','1':'Hauled off site'};
   const g=id=>document.getElementById(id);
   const val=id=>(g(id)?g(id).value:'')||'';
