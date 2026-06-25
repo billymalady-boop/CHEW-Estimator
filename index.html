@@ -2312,9 +2312,22 @@ function copyProposalData(){
   if(S.clrOn){
     out+='SERVICE: Land Clearing\n';
     out+='Tier: '+(attMap[val('clr-att')]||val('clr-att'))+'\n';
-    out+='Acreage: '+(val('clr-ac')||'0')+' acres\n';
-    out+='Density: '+(denMap[val('clr-den')]||val('clr-den'))+'\n';
-    out+='Terrain: '+(terMap[val('clr-ter')]||val('clr-ter'))+'\n';
+    const clrMixed=g('clr-mixed')&&g('clr-mixed').checked;
+    if(clrMixed){
+      const af=parseFloat(val('clr-ac-flat'))||0, as=parseFloat(val('clr-ac-slope'))||0, ah=parseFloat(val('clr-ac-hill'))||0;
+      const totAc=(af+as+ah).toFixed(2).replace(/\.?0+$/,'');
+      const parts=[];
+      if(af>0)parts.push(af+' ac flat');
+      if(as>0)parts.push(as+' ac sloped');
+      if(ah>0)parts.push(ah+' ac hilly');
+      out+='Acreage: '+totAc+' acres (mixed terrain)\n';
+      out+='Density: '+(denMap[val('clr-den')]||val('clr-den'))+'\n';
+      out+='Terrain: Mixed — '+parts.join(' / ')+'\n';
+    } else {
+      out+='Acreage: '+(val('clr-ac')||'0')+' acres\n';
+      out+='Density: '+(denMap[val('clr-den')]||val('clr-den'))+'\n';
+      out+='Terrain: '+(terMap[val('clr-ter')]||val('clr-ter'))+'\n';
+    }
     out+='Ground: '+(rckMap[val('clr-rck')]||val('clr-rck'))+'\n';
     const debSel=g('clr-deb')?g('clr-deb').value:'';
     if(debSel!=='') out+='Material: '+(debMap[debSel]||'Mulched/left on site')+'\n';
