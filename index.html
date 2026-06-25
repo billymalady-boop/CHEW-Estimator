@@ -1817,7 +1817,7 @@ function calcTot(){
   // Hourly 6-hr minimum applies ONLY to hourly-priced sections (gravel/demo/grading/trenching).
   // CLEARING is now priced PER-ACRE (its per-acre rate + the $950 job floor are its floor),
   // so clearing hours are EXCLUDED here to avoid double-charging on top of the per-acre price.
-  const hourlyHrs=S.grvH+S.demH+S.grdH+S.trnH+S.trlH;   // clearing (S.clrH) excluded; trail counts
+  const hourlyHrs=S.grvH+S.demH+S.grdH+S.trnH;   // clearing (per-acre) and trail (per-foot) excluded — $950 floor + profit floor still protect them
   const hourlyOn=S.grvOn||S.demOn||S.grdOn||S.trnOn||S.trlOn;
   let minDayAdj=0;
   if(hourlyOn&&hourlyHrs>0&&hourlyHrs<MIN_HRS){
@@ -2703,7 +2703,8 @@ async function lookupDistance() {
   // Falls back to Nominatim via CORS proxy if Census fails
   const tryApis = [
     () => fetchCensus(addr),
-    () => fetchNominatim(addr)
+    () => fetchNominatim(addr),
+    () => fetchZipFallback(addr)
   ];
   for (const tryFn of tryApis) {
     try {
@@ -2724,7 +2725,7 @@ async function lookupDistance() {
       }
     } catch(e) { /* try next */ }
   }
-  setAddrStatus('⚠ Could not find address — enter distance manually in the miles field below');
+  setAddrStatus('⚠ Address not found — try just the ZIP code, or type miles manually below');
 }
 async function fetchCensus(addr) {
   const url = 'https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address='
@@ -2741,16 +2742,30 @@ async function fetchCensus(addr) {
   };
 }
 async function fetchNominatim(addr) {
-  // Use a CORS proxy to get around browser restrictions
   const query = encodeURIComponent(addr + ', Texas, USA');
   const url = 'https://nominatim.openstreetmap.org/search?q=' + query + '&format=json&limit=1&countrycodes=us';
-  const resp = await fetch(url);
+  const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
   const data = await resp.json();
   if (!data || data.length === 0) return null;
   return {
     lat: parseFloat(data[0].lat),
     lng: parseFloat(data[0].lon),
     display: data[0].display_name.split(',').slice(0,4).join(',')
+  };
+}
+// ZIP fallback: if full address fails, geocode the 5-digit ZIP (town-center estimate)
+async function fetchZipFallback(addr) {
+  const zipMatch = addr.match(/\b(\d{5})\b/);
+  if (!zipMatch) return null;
+  const zip = zipMatch[1];
+  const url = 'https://nominatim.openstreetmap.org/search?q=' + zip + '&format=json&limit=1&countrycodes=us';
+  const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  const data = await resp.json();
+  if (!data || data.length === 0) return null;
+  return {
+    lat: parseFloat(data[0].lat),
+    lng: parseFloat(data[0].lon),
+    display: 'ZIP ' + zip + ' area (approx — verify exact distance)'
   };
 }
 // Allow Enter key to trigger lookup
