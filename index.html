@@ -357,7 +357,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
           <h3>GRAVEL — YOUR QUARRY COST ($/TON)</h3>
           <div class="settings-grid">
             <div class="sf"><label>Flex Base / Crusher Run ($/ton)</label><input type="number" id="s-gv-flexbase" value="16" step="0.25"><div class="hint">Your cost at pit — customer charged at markup below</div></div>
-            <div class="sf"><label>Crushed Stone / ¾" ($/ton)</label><input type="number" id="s-gv-crushed" value="72" step="0.25"><div class="hint">Your pit/delivered cost per ton. Update on rate increases.</div></div>
+            <div class="sf"><label>Crushed Stone / ¾" ($/ton)</label><input type="number" id="s-gv-crushed" value="9" step="0.25"><div class="hint">Your pit/delivered cost per ton. Update on rate increases.</div></div>
             <div class="sf"><label>Screenings / Fines ($/ton)</label><input type="number" id="s-gv-screenings" value="14" step="0.25"></div>
             <div class="sf"><label>Caliche ($/ton)</label><input type="number" id="s-gv-caliche" value="12" step="0.25"></div>
             <div class="sf"><label>Customer Markup Multiplier</label><input type="number" id="s-gv-markup" value="1.3" step="0.05"><div class="hint">1.3 = charge customer your pit cost + 30%. Raise if hauling it yourself; 1.3 fits delivered material.</div></div>
@@ -393,17 +393,17 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
           <div style="font-size:10px;color:#888;margin-bottom:10px;line-height:1.5;">Enter YOUR real monthly numbers. This tells you what the truck must earn each day to not lose money, and what your job floors <i>should</i> be — instead of guessing. Defaults are rough Central Texas placeholders. Replace them.</div>
           <div style="font-size:10px;color:#F5C400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;margin-bottom:6px;">FIXED MONTHLY COSTS</div>
           <div class="settings-grid">
-            <div class="sf"><label>Trailer / equip payment</label><input type="number" id="rr-trailer" value="0" oninput="calcRunRate()"><div class="hint">Monthly note(s)</div></div>
-            <div class="sf"><label>Insurance (GL + auto + inland)</label><input type="number" id="rr-ins" value="0" oninput="calcRunRate()"><div class="hint">Monthly premium</div></div>
-            <div class="sf"><label>Phone / internet / software</label><input type="number" id="rr-soft" value="0" oninput="calcRunRate()"><div class="hint">Jobber, phone, etc.</div></div>
-            <div class="sf"><label>Other fixed (storage, LLC, etc.)</label><input type="number" id="rr-other" value="0" oninput="calcRunRate()"><div class="hint">Monthly</div></div>
+            <div class="sf"><label>Trailer / equip payment</label><input type="number" id="rr-trailer" value="1500" oninput="calcRunRate()"><div class="hint">Monthly note(s)</div></div>
+            <div class="sf"><label>Insurance (GL + auto + inland)</label><input type="number" id="rr-ins" value="830" oninput="calcRunRate()"><div class="hint">Monthly premium</div></div>
+            <div class="sf"><label>Phone / internet / software</label><input type="number" id="rr-soft" value="250" oninput="calcRunRate()"><div class="hint">Jobber, phone, etc.</div></div>
+            <div class="sf"><label>Other fixed (storage, LLC, etc.)</label><input type="number" id="rr-other" value="100" oninput="calcRunRate()"><div class="hint">Monthly</div></div>
           </div>
           <div style="font-size:10px;color:#F5C400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;margin:12px 0 6px;">VARIABLE / OPERATING</div>
           <div class="settings-grid">
-            <div class="sf"><label>Fuel — monthly avg</label><input type="number" id="rr-fuel" value="0" oninput="calcRunRate()"><div class="hint">Truck + machine diesel</div></div>
+            <div class="sf"><label>Fuel — monthly avg</label><input type="number" id="rr-fuel" value="500" oninput="calcRunRate()"><div class="hint">Truck + machine diesel</div></div>
             <div class="sf"><label>Dump fees — monthly avg</label><input type="number" id="rr-dump" value="0" oninput="calcRunRate()"><div class="hint">Killeen Transfer Station</div></div>
             <div class="sf"><label>Your / helper pay ($/hr)</label><input type="number" id="rr-wage" value="35" oninput="calcRunRate()"><div class="hint">Pay yourself — even a little</div></div>
-            <div class="sf"><label>Maint. reserve — monthly</label><input type="number" id="rr-maint" value="0" oninput="calcRunRate()"><div class="hint">Set aside for repairs</div></div>
+            <div class="sf"><label>Maint. reserve — monthly</label><input type="number" id="rr-maint" value="400" oninput="calcRunRate()"><div class="hint">Set aside for repairs</div></div>
           </div>
           <div style="font-size:10px;color:#F5C400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;margin:12px 0 6px;">OPERATING ASSUMPTIONS</div>
           <div class="settings-grid">
@@ -1220,7 +1220,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
         <input type="number" id="misc" value="0" min="0" oninput="calcTot()">
       </div>
     </div>
-    <div class="f"><label>Site Conditions Buffer <span style="color:var(--muted);font-size:10px;font-weight:400;">— shown on email as a line item</span></label>
+    <div class="f"><label>Site Conditions Allowance <span style="color:var(--muted);font-size:10px;font-weight:400;">— shown on email as a line item</span></label>
       <div class="rg">
         <div class="rb" onclick="sr('cont','0',this);calcTot()" title="Site visited, scope is fully known">None — Site Confirmed</div>
         <div class="rb" onclick="sr('cont','5',this);calcTot()" title="Clean site, seen it, minimal unknowns">5% — Clean Site</div>
@@ -1229,7 +1229,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
         <div class="rb" onclick="sr('cont','20',this);calcTot()" title="Demo, buried debris suspected, complex site">20% — Complex/Demo</div>
       </div>
       <input type="hidden" id="cont" value="10">
-      <div class="hint">None=site confirmed · 5%=clean · 10%=standard · 15%=rough/unseen · 20%=complex/demo · shown on email as Site Conditions Buffer</div>
+      <div class="hint">None=site confirmed · 5%=clean · 10%=standard · 15%=rough/unseen · 20%=complex/demo · shown on email as Site Conditions Allowance</div>
     </div>
     <div class="g3">
       <div class="f"><label>Deposit Required</label>
@@ -1308,7 +1308,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
   <div class="ps-l" id="psl-trn" style="display:none"><span class="psl">Trenching / Digging Arm</span><span class="psv" id="psv-trn">—</span></div>
   <div class="ps-l" id="psl-rnt" style="display:none"><span class="psl">Rental Equipment</span><span class="psv" id="psv-rnt">—</span></div>
   <div class="ps-l" id="psl-sur" style="display:none"><span class="psl">Surcharges</span><span class="psv" id="psv-sur">—</span></div>
-  <div class="ps-l" id="psl-con" style="display:none"><span class="psl">Site Conditions Buffer</span><span class="psv" id="psv-con">—</span></div>
+  <div class="ps-l" id="psl-con" style="display:none"><span class="psl">Site Conditions Allowance</span><span class="psv" id="psv-con">—</span></div>
   <div class="ps-tot">
     <span class="pstl">Total</span>
     <span class="pstv" id="psv-tot">$0</span>
@@ -1354,7 +1354,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
   <div class="sl"><span class="sll">Trenching</span><span class="slv z" id="r-trn">—</span></div>
   <div class="sl"><span class="sll">Rental Equipment</span><span class="slv z" id="r-rnt">—</span></div>
   <div class="sl"><span class="sll">Surcharges</span><span class="slv z" id="r-sur">—</span></div>
-  <div class="sl"><span class="sll">Site Conditions Buffer</span><span class="slv z" id="r-con">—</span></div>
+  <div class="sl"><span class="sll">Site Conditions Allowance</span><span class="slv z" id="r-con">—</span></div>
   <div class="sl"><span class="sll" style="color:#2ecc71;">Subscriber Discount</span><span class="slv z" id="r-sub-disc" style="color:#2ecc71;">—</span></div>
   <div class="sl" id="r-cashdisc-row"><span class="sll" style="color:#2ecc71;">Cash Discount</span><span class="slv z" id="r-cash-disc">—</span></div>
   <div class="strow"><span class="stl">Total</span><span class="stv" id="r-tot">$0</span></div>
@@ -1609,7 +1609,7 @@ function calcClr(){
   calcTot();
 }
 // ── GRAVEL ──
-const GV_DEF_COST={flexbase:16,crushed:18,screenings:14,caliche:12,custom:0};
+const GV_DEF_COST={flexbase:16,crushed:9,screenings:14,caliche:12,custom:0};
 let GV_MARKUP=1.3;
 function gvMatName(m){
   const names={flexbase:'Flex Base',crushed:'¾" Crushed Limestone',screenings:'Screenings',caliche:'Caliche Base',custom:'Gravel'};
@@ -2112,7 +2112,7 @@ function buildLineRows() {
   }
   // Show contingency as line item so math adds up for customer
   const contPctDisplay = parseFloat(sv('cont'))||0;
-  if(contAmt>0) rows.push(`<tr><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#aaaaaa;font-size:13px;font-style:italic;">Site Conditions Buffer (${contPctDisplay}%)</td><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;text-align:right;font-weight:600;color:#cccccc;font-size:13px;">${fmt(contAmt)}</td></tr>`);
+  if(contAmt>0) rows.push(`<tr><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#aaaaaa;font-size:13px;font-style:italic;">Site Conditions Allowance (${contPctDisplay}%)</td><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;text-align:right;font-weight:600;color:#cccccc;font-size:13px;">${fmt(contAmt)}</td></tr>`);
   if(cashDiscAmt>0) rows.push(`<tr style="background:#0a1f0a;"><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;color:#2ecc71;font-size:14px;">Cash / Instant Pay Discount (${sv('cash-disc')}%)</td><td style="padding:10px 14px;border-bottom:1px solid #2a2a2a;text-align:right;font-weight:700;color:#2ecc71;font-size:14px;">-${fmt(cashDiscAmt)}</td></tr>`);
   return { rows, total, dep: parseFloat(sv('dep'))/100, base, contAmt, cashDiscAmt, payMethods };
 }
@@ -2554,7 +2554,7 @@ const SETTINGS_DEFAULTS = {
   mob1:75, mob2:125, mob3:175, mob4:225, mob5:250, mob6:300,
   demConc:750, demAsph:700, demStruct:500, demMixed:600,
   // Gravel quarry costs (your cost per ton)
-  gvFlexbase:16, gvCrushed:72, gvScreenings:14, gvCaliche:12,
+  gvFlexbase:16, gvCrushed:9, gvScreenings:14, gvCaliche:12,
   // Gravel markup multiplier (1.3 = charge customer your cost + 30%)
   gvMarkup:1.3,
   // Spread & grade rate
@@ -2563,8 +2563,8 @@ const SETTINGS_DEFAULTS = {
   debBrush:165, debYard:165, debHousehold:215, debCd:215,
   debStumps:180, debDirt:165, debWetsoil:165, debGravel:165, debConcrete:240,
   // Run-rate calculator inputs (monthly costs + operating assumptions)
-  rrTrailer:0, rrIns:0, rrSoft:0, rrOther:0, rrFuel:0, rrDump:0,
-  rrWage:35, rrMaint:0, rrDays:22, rrHrs:6, rrMargin:50, rrDebhrs:1.5,
+  rrTrailer:1500, rrIns:830, rrSoft:250, rrOther:100, rrFuel:500, rrDump:0,
+  rrWage:35, rrMaint:400, rrDays:22, rrHrs:6, rrMargin:50, rrDebhrs:1.5,
   pin:'1411'
 };
 let R = {...SETTINGS_DEFAULTS}; // live rates object
