@@ -1066,7 +1066,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
       <div><div class="cl">Eff. Rate</div><div class="cv sm" id="trl-er">—</div></div>
       <div><div class="cl">Trail Subtotal</div><div class="cv" id="trl-sub">—</div></div>
     </div>
-    <div class="hint">$10/linear ft base · light/flat. Stacks density &amp; terrain multipliers. Min job floor ($950) still applies.</div>
+    <div class="hint">$10/linear ft base · light/flat. Stacks density &amp; terrain multipliers. Min job floor ($1,600) still applies.</div>
   </div>
 </div>
 
@@ -1896,9 +1896,9 @@ function calcTot(){
   const debOnly=S.debOn&&!S.clrOn&&!S.grvOn&&!S.demOn&&!S.grdOn&&!S.trnOn&&!S.rntOn&&!S.trlOn;
   const MIN_HRS=6;
   // Hourly 6-hr minimum applies ONLY to hourly-priced sections (gravel/demo/grading/trenching).
-  // CLEARING is now priced PER-ACRE (its per-acre rate + the $950 job floor are its floor),
+  // CLEARING is now priced PER-ACRE (its per-acre rate + the $1,600 job floor are its floor),
   // so clearing hours are EXCLUDED here to avoid double-charging on top of the per-acre price.
-  const hourlyHrs=S.grvH+S.demH+S.grdH+S.trnH;   // clearing (per-acre) and trail (per-foot) excluded — $950 floor + profit floor still protect them
+  const hourlyHrs=S.grvH+S.demH+S.grdH+S.trnH;   // clearing (per-acre) and trail (per-foot) excluded — $1,600 floor + profit floor still protect them
   const hourlyOn=S.grvOn||S.demOn||S.grdOn||S.trnOn||S.trlOn;
   let minDayAdj=0;
   if(hourlyOn&&hourlyHrs>0&&hourlyHrs<MIN_HRS){
@@ -1907,11 +1907,11 @@ function calcTot(){
     minDayAdj=Math.round(shortfall*R.bucket);
     total=total+minDayAdj;
   }
-  // Dollar floor: machine jobs $950 (build spec), debris-only $249.
-  // This is what protects small CLEARING jobs (per-acre price floored up to $950).
+  // Dollar floor: machine jobs $1,600 (real cost + 25% margin), debris-only $249.
+  // This is what protects small CLEARING jobs (per-acre price floored up to $1,600).
   // Machine-job floor = a viable 6-hour day. Flexes by the work type's hourly rate:
   //  - Mulching (SP-900): 6 × $350 = $2,100
-  //  - Other clearing/machine work (brush/grapple/bucket/grading): 6 × ~$155 ≈ $950
+  //  - Other clearing/machine work (brush/grapple/bucket/grading): 6-hr day $1,600 (real cost + 25%)
   //  - Debris-only (hand-load junk): $249, not a machine day
   let jobFloor;
   if(debOnly){
@@ -1919,7 +1919,7 @@ function calcTot(){
   } else if(S.clrOn && sv('clr-att')==='mulch'){
     jobFloor=Math.round(6*MUL_RATE);   // 6-hr mulching day @ $350 = $2,100
   } else {
-    jobFloor=950;                      // 6-hr day @ ~$155 brush/grapple/bucket rate
+    jobFloor=1600;                     // 6-hr day @ real cost + 25% margin (updated from $950)
   }
   const minHit=(total>0&&total<jobFloor)||minDayAdj>0;
   if(total>0&&total<jobFloor)total=jobFloor;
