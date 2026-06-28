@@ -1530,7 +1530,11 @@ function calcMob(){
     if(d<=15)f=R.mob1;else if(d<=25)f=R.mob2;else if(d<=35)f=R.mob3;
     else if(d<=45)f=R.mob4;else if(d<=55)f=R.mob5;else f=R.mob6;
   }
-  S.mob=f;$('mob-d').textContent=fmt(f);calcTot();
+  S.mob=f;$('mob-d').textContent=fmt(f);
+  // Update drive time display on manual distance entry
+  if(d>0){const dt=$('drive-time');if(dt)dt.textContent=estDriveTime(d)+' from base';}
+  else{const dt=$('drive-time');if(dt)dt.textContent='—';}
+  calcTot();
 }
 // ── CLEARING ──  (per-acre tables = time-based price floored at the published "starting at" rates; see build spec)
 // Brush Cut (Brush Hog): light/med held at $550 floor, heavy $740 (time exceeds floor)
