@@ -1070,6 +1070,37 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
   </div>
 </div>
 
+<!-- STUMP GRINDING -->
+<div class="panel off" id="p-stp">
+  <div class="ph" onclick="togSvc('stp')">
+    <div class="ph-left">
+      <div class="ptog" id="t-stp" onclick="event.stopPropagation();onOff('stp')">✓</div>
+      <div class="pt">Stump Grinding</div>
+      <div class="psub" id="s-stp"></div>
+    </div>
+    <div class="pamt z" id="a-stp">—</div>
+  </div>
+  <div class="pb" id="b-stp">
+    <div class="info">Add-on service — priced per inch of stump diameter (measured at grade). Best sold while already on site for clearing/mulching. Enter total diameter-inches across all stumps. Tiered: first 29&quot; per stump at $4/in, anything 30&quot;+ at $5/in.</div>
+    <div class="g3" style="margin-top:12px">
+      <div class="f"><label>Number of stumps</label><input type="number" id="stp-ct" placeholder="0" min="0" oninput="calcStp()"></div>
+      <div class="f"><label>Avg diameter (inches)</label><input type="number" id="stp-dia" placeholder="0" min="0" oninput="calcStp()"></div>
+      <div class="f"><label>Wood type</label>
+        <select id="stp-wood" onchange="calcStp()">
+          <option value="1.0">Softwood — cedar / pine</option>
+          <option value="1.2">Hardwood — oak / mesquite / live oak (+20%)</option>
+        </select>
+      </div>
+    </div>
+    <div class="g3">
+      <div><div class="cl">Rate (1–29&quot;)</div><div class="cv sm">$4/in</div></div>
+      <div><div class="cl">Rate (30&quot;+)</div><div class="cv sm">$5/in</div></div>
+      <div><div class="cl">Stump Subtotal</div><div class="cv" id="stp-sub">—</div></div>
+    </div>
+    <div class="hint" id="stp-hint">Add-on rate (already on site). If stump grinding is the ONLY service, the $1,600 machine-day floor applies — don't roll out for a few stumps.</div>
+  </div>
+</div>
+
 <!-- TRENCHING -->
 <div class="panel off" id="p-trn" style="pointer-events:none;opacity:0.4;" title="Coming soon">
   <div class="ph" onclick="togSvc('trn')">
@@ -1306,6 +1337,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
   <div class="ps-l" id="psl-dem" style="display:none"><span class="psl">Demolition Cleanup</span><span class="psv" id="psv-dem">—</span></div>
   <div class="ps-l" id="psl-grd" style="display:none"><span class="psl">Grading / Site Prep</span><span class="psv" id="psv-grd">—</span></div>
   <div class="ps-l" id="psl-trl" style="display:none"><span class="psl">Trail Cutting</span><span class="psv" id="psv-trl">—</span></div>
+  <div class="ps-l" id="psl-stp" style="display:none"><span class="psl">Stump Grinding</span><span class="psv" id="psv-stp">—</span></div>
   <div class="ps-l" id="psl-trn" style="display:none"><span class="psl">Trenching / Digging Arm</span><span class="psv" id="psv-trn">—</span></div>
   <div class="ps-l" id="psl-rnt" style="display:none"><span class="psl">Rental Equipment</span><span class="psv" id="psv-rnt">—</span></div>
   <div class="ps-l" id="psl-sur" style="display:none"><span class="psl">Surcharges</span><span class="psv" id="psv-sur">—</span></div>
@@ -1352,6 +1384,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
   <div class="sl"><span class="sll">Demolition</span><span class="slv z" id="r-dem">—</span></div>
   <div class="sl"><span class="sll">Grading / Site Prep</span><span class="slv z" id="r-grd">—</span></div>
   <div class="sl"><span class="sll">Trail Cutting</span><span class="slv z" id="r-trl">—</span></div>
+  <div class="sl"><span class="sll">Stump Grinding</span><span class="slv z" id="r-stp">—</span></div>
   <div class="sl"><span class="sll">Trenching</span><span class="slv z" id="r-trn">—</span></div>
   <div class="sl"><span class="sll">Rental Equipment</span><span class="slv z" id="r-rnt">—</span></div>
   <div class="sl"><span class="sll">Surcharges</span><span class="slv z" id="r-sur">—</span></div>
@@ -1416,9 +1449,9 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
 <script>
 // ── STATE ──
 const S={
-  mob:0,clr:0,grv:0,deb:0,dem:0,grd:0,trn:0,rnt:0,trl:0,
-  clrOn:false,grvOn:false,debOn:false,demOn:false,grdOn:false,trnOn:false,rntOn:false,trlOn:false,
-  clrH:0,grvH:0,debH:0,demH:0,grdH:0,trnH:0,trlH:0,clrTeeth:0,
+  mob:0,clr:0,grv:0,deb:0,dem:0,grd:0,trn:0,rnt:0,trl:0,stp:0,
+  clrOn:false,grvOn:false,debOn:false,demOn:false,grdOn:false,trnOn:false,rntOn:false,trlOn:false,stpOn:false,
+  clrH:0,grvH:0,debH:0,demH:0,grdH:0,trnH:0,trlH:0,stpH:0,clrTeeth:0,
   grvBase:0,grvSurf:0,grvBaseTons:0,grvSurfTons:0,grvBaseMat:'',grvSurfMat:'',
   debDisp:0,demDisp:0,grvMat:0,tripCost:0,status:'ESTIMATE',selMat:'brush'
 };
@@ -1459,6 +1492,7 @@ function recalc(s){
   else if(s==='grd')calcGrd();
   else if(s==='trn')calcTrn();
   else if(s==='trl')calcTrl();
+  else if(s==='stp')calcStp();
   else if(s==='rnt')calcRnt();
 }
 // ── STATUS ──
@@ -1516,7 +1550,7 @@ function facilityRate(mat){
 }
 // ── MOB ──
 function machineOnJob(){
-  if(S.clrOn||S.grvOn||S.demOn||S.grdOn||S.trnOn||S.trlOn)return true;
+  if(S.clrOn||S.grvOn||S.demOn||S.grdOn||S.trnOn||S.trlOn||S.stpOn)return true;
   if(S.debOn && sv('deb-mode')!=='residential')return true;
   if(S.debOn && sv('deb-mode')==='residential'){
     const nm=$('res-no-machine'); if(nm && !nm.checked)return true;
@@ -1874,6 +1908,25 @@ function calcTrl(){
   $('trl-sub').textContent=l>0?fmt(sub):'—';
   updAmt('trl',S.trl,S.trlOn,l>0?l+' ft':'');calcTot();
 }
+function calcStp(){
+  if(!S.stpOn){S.stp=0;S.stpH=0;updAmt('stp',0,false,'');calcTot();return;}
+  const ct=fv('stp-ct'),dia=fv('stp-dia'),wood=parseFloat(sv('stp-wood'))||1.0;
+  // Tiered per-stump: first 29" at $4/in, inches 30+ at $5/in
+  let perStump=0;
+  if(dia>0){
+    const lowIn=Math.min(dia,29), hiIn=Math.max(dia-29,0);
+    perStump=(lowIn*4)+(hiIn*5);
+  }
+  const sub=(ct>0&&dia>0)?ct*perStump*wood:0;
+  // hours for day-model: ~0.4 hr per 24" stump avg, scaled by diameter & count (drives floor check)
+  const h=(ct>0&&dia>0)?ct*(dia/24*0.4)*wood:0;
+  S.stp=sub;S.stpH=h;
+  $('stp-sub').textContent=sub>0?fmt(sub):'—';
+  $('stp-hint').textContent=sub>0
+    ? 'Effective ~$'+(perStump*wood).toFixed(0)+'/stump avg ('+ct+' stumps). Add-on rate — $1,600 floor applies only if stump grinding is the sole service.'
+    : 'Add-on rate (already on site). If stump grinding is the ONLY service, the $1,600 machine-day floor applies — don\u2019t roll out for a few stumps.';
+  updAmt('stp',S.stp,S.stpOn,(ct>0&&dia>0)?ct+' stumps · '+dia+'" avg':'');calcTot();
+}
 // ── TOTAL ──
 function calcTot(){
   {
@@ -1959,7 +2012,7 @@ function calcTot(){
   $('r-mob').textContent=fmt(S.mob);
   setRV('r-clr',S.clr,S.clrOn);setRV('r-grv',S.grv,S.grvOn);
   setRV('r-deb',S.deb,S.debOn);setRV('r-dem',S.dem,S.demOn);
-  setRV('r-grd',S.grd,S.grdOn);setRV('r-trl',S.trl,S.trlOn);setRV('r-trn',S.trn,S.trnOn);setRV('r-rnt',S.rnt,S.rntOn);
+  setRV('r-grd',S.grd,S.grdOn);setRV('r-trl',S.trl,S.trlOn);setRV('r-stp',S.stp,S.stpOn);setRV('r-trn',S.trn,S.trnOn);setRV('r-rnt',S.rnt,S.rntOn);
   if(surTotal>0){$('r-sur').textContent=fmt(surTotal);$('r-sur').classList.remove('z');}
   else{$('r-sur').textContent='—';$('r-sur').classList.add('z');}
   if(contAmt>0){$('r-con').textContent=fmt(contAmt);$('r-con').classList.remove('z');}
@@ -2032,7 +2085,7 @@ function updPS(total,cont,sur,dep){
   setPSL('psl-deb','psv-deb',S.deb,S.debOn);
   setPSL('psl-dem','psv-dem',S.dem,S.demOn);
   setPSL('psl-grd','psv-grd',S.grd,S.grdOn);
-  setPSL('psl-trl','psv-trl',S.trl,S.trlOn);setPSL('psl-trn','psv-trn',S.trn,S.trnOn);
+  setPSL('psl-trl','psv-trl',S.trl,S.trlOn);setPSL('psl-stp','psv-stp',S.stp,S.stpOn);setPSL('psl-trn','psv-trn',S.trn,S.trnOn);
   setPSL('psl-rnt','psv-rnt',S.rnt,S.rntOn);
   if(sur>0){$('psl-sur').style.display='flex';$('psv-sur').textContent=fmt(sur);}
   else $('psl-sur').style.display='none';
@@ -2087,6 +2140,7 @@ function buildLineRows() {
   if(S.demOn&&S.dem>0) rows.push(tr('Demolition Cleanup', fmt(S.dem), S.demH ? S.demH.toFixed(1)+' hrs' : ''));
   if(S.grdOn&&S.grd>0) rows.push(tr('Grading / Site Prep', fmt(S.grd), S.grdH ? S.grdH.toFixed(1)+' hrs @ $'+R.bucket+'/hr' : ''));
   if(S.trlOn&&S.trl>0) rows.push(tr('Trail Cutting', fmt(S.trl), (fv('trl-l')||0)+' linear ft'));
+  if(S.stpOn&&S.stp>0) rows.push(tr('Stump Grinding', fmt(S.stp), (fv('stp-ct')||0)+' stumps · '+(fv('stp-dia')||0)+'" avg'));
   if(S.trnOn&&S.trn>0) rows.push(tr('Trenching / Digging Arm', fmt(S.trn), S.trnH ? S.trnH.toFixed(1)+' hrs @ $'+R.trench+'/hr' : ''));
   const sur=(parseFloat(sv('sur'))||0)+(parseFloat(sv('rush'))||0)+fv('misc');
   if(sur>0) rows.push(tr('Surcharges', fmt(sur)));
@@ -2351,6 +2405,7 @@ function copyProposalData(){
   if(S.demOn) out+='SERVICE: Demolition (see estimator for details)\n';
   if(S.grdOn) out+='SERVICE: Grading (see estimator for details)\n';
   if(S.trlOn) out+='SERVICE: Trail Cutting ('+(fv('trl-l')||0)+' linear ft)\n';
+  if(S.stpOn) out+='SERVICE: Stump Grinding ('+(fv('stp-ct')||0)+' stumps, '+(fv('stp-dia')||0)+'" avg dia)\n';
   out+='PRICE (as scoped): '+(total||'$0')+'\n';
   out+='Note: Minimum job price applies. Mobilization included per distance band.\n';
   out+='\n[Access, trees to keep, customer goal, and any special notes — see transcript.]';
@@ -2776,7 +2831,7 @@ function saveSettings() {
   // Update default trip charge inputs
   document.querySelectorAll('input[id$="-trip"]').forEach(el => { if(!el._userEdited) el.value = R.trip; });
   // Recalc everything
-  calcMob(); ['clr','grv','deb','dem','grd','trn','rnt','trl'].forEach(s => { if(S[s+'On']) recalc(s); });
+  calcMob(); ['clr','grv','deb','dem','grd','trn','rnt','trl','stp'].forEach(s => { if(S[s+'On']) recalc(s); });
   alert('✅ Rates saved! All calculations updated.');
   closeSettings();
 }
@@ -3004,6 +3059,7 @@ ${S.debOn&&S.deb>0?`<tr><td>Debris & Waste Removal</td><td>$${S.deb.toLocaleStri
 ${S.demOn&&S.dem>0?`<tr><td>Demolition Cleanup</td><td>$${S.dem.toLocaleString()}</td></tr>`:''}
 ${S.grdOn&&S.grd>0?`<tr><td>Grading / Site Prep</td><td>$${S.grd.toLocaleString()}</td></tr>`:''}
 ${S.trlOn&&S.trl>0?`<tr><td>Trail Cutting</td><td>$${S.trl.toLocaleString()}</td></tr>`:''}
+${S.stpOn&&S.stp>0?`<tr><td>Stump Grinding</td><td>$${S.stp.toLocaleString()}</td></tr>`:''}
 ${S.trnOn&&S.trn>0?`<tr><td>Trenching / Digging Arm</td><td>$${S.trn.toLocaleString()}</td></tr>`:''}
 </table>
 <div class="tot">TOTAL: ${total}</div>
@@ -3228,7 +3284,7 @@ function calcRnt() {
 
 function resetF(){
   if(!confirm('Clear all data and start a new quote?'))return;
-  ['clr','grv','deb','dem','grd','trn','rnt','trl'].forEach(s=>{
+  ['clr','grv','deb','dem','grd','trn','rnt','trl','stp'].forEach(s=>{
     S[s]=0;S[s+'On']=false;S[s+'H']=0;
     $('t-'+s).classList.remove('on');
     $('p-'+s).classList.remove('off');
