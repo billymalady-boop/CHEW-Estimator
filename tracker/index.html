@@ -973,7 +973,10 @@ body {
           <option value="">All Months</option>
         </select>
       </div>
-      <button class="btn btn-red" onclick="openExpenseModal()">+ Log Expense</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn" onclick="exportExpensesCSV()" style="background:#1a1a1a;border:1px solid #F5C400;color:#F5C400;">⬇ Export CSV</button>
+        <button class="btn btn-red" onclick="openExpenseModal()">+ Log Expense</button>
+      </div>
     </div>
 
     <!-- Expense summary KPIs -->
@@ -1223,6 +1226,41 @@ function loadExpenses() {
 
 function saveExpenses(expenses) {
   localStorage.setItem('chew_expenses', JSON.stringify(expenses));
+}
+function exportExpensesCSV() {
+  let exps = loadExpenses();
+  // respect active filters so you can export one month for the CPA, or everything
+  const cat = document.getElementById('filter-exp-cat')?.value||'';
+  const month = document.getElementById('filter-exp-month')?.value||'';
+  if (cat) exps = exps.filter(e => e.cat === cat);
+  if (month) exps = exps.filter(e => getMonthKey(e.date) === month);
+  if (!exps.length) { alert('No expenses to export for the current filter.'); return; }
+  // sort by date ascending for a clean ledger
+  exps = exps.slice().sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+  const esc = v => {
+    v = (v===null||v===undefined) ? '' : String(v);
+    return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  };
+  const headers = ['Date','Category','Description','Amount','Tax Deductible','Receipt #','Notes'];
+  const rows = exps.map(e => [
+    e.date||'', e.cat||'', e.desc||'',
+    (parseFloat(e.amount)||0).toFixed(2),
+    e.tax||'', e.receipt||'', e.notes||''
+  ].map(esc).join(','));
+  const total = exps.reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const deductible = exps.filter(e=>e.tax==='yes').reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  rows.push('');
+  rows.push(['','','TOTAL',total.toFixed(2),'','',''].map(esc).join(','));
+  rows.push(['','','TAX DEDUCTIBLE',deductible.toFixed(2),'','',''].map(esc).join(','));
+  const csv = headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  const suffix = month ? '_'+month : (cat ? '_'+cat : '');
+  a.href = url; a.download = 'CHEW_expenses'+suffix+'_'+stamp+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ── HELPERS ──
