@@ -336,12 +336,12 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
         <div class="settings-section">
           <h3>MOBILIZATION FEES BY DISTANCE</h3>
           <div class="settings-grid">
-            <div class="sf"><label>0–15 miles ($)</label><input type="number" id="s-mob1" value="75"></div>
-            <div class="sf"><label>16–25 miles ($)</label><input type="number" id="s-mob2" value="125"></div>
-            <div class="sf"><label>26–35 miles ($)</label><input type="number" id="s-mob3" value="175"></div>
-            <div class="sf"><label>36–45 miles ($)</label><input type="number" id="s-mob4" value="225"></div>
-            <div class="sf"><label>46–55 miles ($)</label><input type="number" id="s-mob5" value="250"></div>
-            <div class="sf"><label>56–60 miles ($)</label><input type="number" id="s-mob6" value="300"></div>
+            <div class="sf"><label>1–20 miles ($)</label><input type="number" id="s-mob1" value="125"></div>
+            <div class="sf"><label>21–30 miles ($)</label><input type="number" id="s-mob2" value="160"></div>
+            <div class="sf"><label>31–40 miles ($)</label><input type="number" id="s-mob3" value="200"></div>
+            <div class="sf"><label>41–50 miles ($)</label><input type="number" id="s-mob4" value="235"></div>
+            <div class="sf"><label>51–60 miles ($)</label><input type="number" id="s-mob5" value="270"></div>
+            <div class="sf"><label>60+ miles / out of area ($)</label><input type="number" id="s-mob6" value="350"></div>
           </div>
         </div>
         <div class="settings-section">
@@ -1561,8 +1561,8 @@ function calcMob(){
   const d=fv('dist');
   let f=0;
   if(d>0 && machineOnJob()){
-    if(d<=15)f=R.mob1;else if(d<=25)f=R.mob2;else if(d<=35)f=R.mob3;
-    else if(d<=45)f=R.mob4;else if(d<=55)f=R.mob5;else f=R.mob6;
+    if(d<=20)f=R.mob1;else if(d<=30)f=R.mob2;else if(d<=40)f=R.mob3;
+    else if(d<=50)f=R.mob4;else if(d<=60)f=R.mob5;else f=R.mob6;
   }
   S.mob=f;$('mob-d').textContent=fmt(f);
   // Update drive time display on manual distance entry
@@ -1932,8 +1932,8 @@ function calcTot(){
   {
     const d=fv('dist'); let mf=0;
     if(d>0 && typeof machineOnJob==='function' && machineOnJob()){
-      if(d<=15)mf=R.mob1;else if(d<=25)mf=R.mob2;else if(d<=35)mf=R.mob3;
-      else if(d<=45)mf=R.mob4;else if(d<=55)mf=R.mob5;else mf=R.mob6;
+      if(d<=20)mf=R.mob1;else if(d<=30)mf=R.mob2;else if(d<=40)mf=R.mob3;
+      else if(d<=50)mf=R.mob4;else if(d<=60)mf=R.mob5;else mf=R.mob6;
     }
     S.mob=mf; const md=$('mob-d'); if(md)md.textContent=fmt(mf);
   }
@@ -2611,7 +2611,7 @@ const SETTINGS_DEFAULTS = {
   bucket:150, brush:160, grapple:155, jack:175, trench:165,
   dispBrush:165, dispDirt:165, dispCd:215, dispStump:180, dispConc:240, dispAsph:215,
   dumpCost:92.10, trip:65,
-  mob1:75, mob2:125, mob3:175, mob4:225, mob5:250, mob6:300,
+  mob1:125, mob2:160, mob3:200, mob4:235, mob5:270, mob6:350,
   demConc:750, demAsph:700, demStruct:500, demMixed:600,
   // Gravel quarry costs (your cost per ton)
   gvFlexbase:16, gvCrushed:9, gvScreenings:14, gvCaliche:12,
