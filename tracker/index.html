@@ -930,6 +930,28 @@ body {
       </div>
     </div>
 
+    <!-- Production Rates (built from real jobs) -->
+    <div class="section-title">Production Rates — Your Real Acres/Hour</div>
+    <div style="overflow-x:auto;margin-bottom:8px;">
+      <table class="jobs-table">
+        <thead>
+          <tr>
+            <th>Density</th>
+            <th>Terrain</th>
+            <th>Ground</th>
+            <th>Jobs</th>
+            <th>Total Acres</th>
+            <th>Total Hours</th>
+            <th>Avg Acres/Hour</th>
+          </tr>
+        </thead>
+        <tbody id="prod-rate-body">
+          <tr><td colspan="7" style="color:var(--muted);font-size:12px;">Log jobs with acres, hours, and conditions to build your rates.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:20px;">These are YOUR machine's real rates, built from completed jobs. Use them to replace estimated production rates in pricing. More jobs = more reliable rates.</div>
+
     <!-- Monthly benchmark table -->
     <div class="section-title">Monthly Benchmarks vs Ramp Plan</div>
     <div style="overflow-x:auto;">
@@ -1058,6 +1080,34 @@ body {
       <div class="f"><label>Revenue ($)</label><input type="number" id="j-revenue" placeholder="0" min="0" step="1"></div>
       <div class="f"><label>Est. Hours</label><input type="number" id="j-hrs-est" placeholder="0" min="0" step="0.5"></div>
       <div class="f"><label>Actual Hours</label><input type="number" id="j-hrs-act" placeholder="0" min="0" step="0.5"></div>
+    </div>
+
+    <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+      <div class="f"><label>Acres Cleared</label><input type="number" id="j-acres" placeholder="0" min="0" step="0.05"></div>
+      <div class="f"><label>Density</label>
+        <select id="j-density">
+          <option value="">—</option>
+          <option value="L1">L1 Light</option>
+          <option value="L2">L2 Moderate</option>
+          <option value="L3">L3 Heavy</option>
+        </select>
+      </div>
+      <div class="f"><label>Terrain</label>
+        <select id="j-terrain">
+          <option value="">—</option>
+          <option value="Flat">Flat</option>
+          <option value="Sloped">Sloped</option>
+          <option value="Hilly">Hilly</option>
+        </select>
+      </div>
+      <div class="f"><label>Ground</label>
+        <select id="j-ground">
+          <option value="">—</option>
+          <option value="Smooth">Smooth</option>
+          <option value="Rock">Rock</option>
+          <option value="Caliche">Caliche</option>
+        </select>
+      </div>
     </div>
 
     <div class="form-grid three">
@@ -1318,11 +1368,11 @@ function openJobModal(id=null) {
 }
 
 function clearJobForm() {
-  ['j-date','j-customer','j-zip','j-dist','j-revenue','j-hrs-est','j-hrs-act','j-cost-mat','j-cost-disp','j-cost-other','j-quote-num','j-notes'].forEach(id => {
+  ['j-date','j-customer','j-zip','j-dist','j-revenue','j-hrs-est','j-hrs-act','j-acres','j-cost-mat','j-cost-disp','j-cost-other','j-quote-num','j-notes'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  ['j-type','j-status','j-source','j-payment'].forEach(id => {
+  ['j-type','j-status','j-source','j-payment','j-density','j-terrain','j-ground'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.selectedIndex = 0;
   });
@@ -1338,6 +1388,7 @@ function populateJobForm(j) {
   set('j-dist', j.dist); set('j-revenue', j.revenue); set('j-hrs-est', j.hrsEst);
   set('j-hrs-act', j.hrsAct); set('j-cost-mat', j.costMat); set('j-cost-disp', j.costDisp);
   set('j-cost-other', j.costOther); set('j-quote-num', j.quoteNum); set('j-notes', j.notes);
+  set('j-acres', j.acres); set('j-density', j.density); set('j-terrain', j.terrain); set('j-ground', j.ground);
   set('j-type', j.type); set('j-status', j.status); set('j-source', j.source); set('j-payment', j.payment);
   document.querySelectorAll('.attach-cb input').forEach(cb => {
     const on = (j.attachments||[]).includes(cb.value);
@@ -1375,6 +1426,10 @@ function saveJob() {
     revenue: rev,
     hrsEst: document.getElementById('j-hrs-est').value,
     hrsAct: document.getElementById('j-hrs-act').value,
+    acres: document.getElementById('j-acres').value,
+    density: document.getElementById('j-density').value,
+    terrain: document.getElementById('j-terrain').value,
+    ground: document.getElementById('j-ground').value,
     costMat: document.getElementById('j-cost-mat').value,
     costDisp: document.getElementById('j-cost-disp').value,
     costOther: document.getElementById('j-cost-other').value,
@@ -1843,6 +1898,38 @@ function renderInsights() {
   });
 
   document.getElementById('benchmark-tbody').innerHTML = benchRows.join('');
+
+  // ── PRODUCTION RATES (real acres/hour from completed jobs) ──
+  const prodGroups = {};
+  jobs.forEach(j => {
+    const acres = parseFloat(j.acres)||0;
+    const hrs = parseFloat(j.hrsAct)||0;
+    // only jobs with real acres + hours + at least density recorded
+    if (acres<=0 || hrs<=0 || !j.density) return;
+    const key = `${j.density}|${j.terrain||'—'}|${j.ground||'—'}`;
+    if (!prodGroups[key]) prodGroups[key] = {density:j.density, terrain:j.terrain||'—', ground:j.ground||'—', jobs:0, acres:0, hrs:0};
+    prodGroups[key].jobs++;
+    prodGroups[key].acres += acres;
+    prodGroups[key].hrs += hrs;
+  });
+  const densOrder = {L1:1,L2:2,L3:3};
+  const prodRows = Object.values(prodGroups).sort((a,b)=>(densOrder[a.density]||9)-(densOrder[b.density]||9) || a.terrain.localeCompare(b.terrain));
+  const pb = document.getElementById('prod-rate-body');
+  if (pb) {
+    pb.innerHTML = prodRows.length ? prodRows.map(g => {
+      const rate = g.hrs>0 ? (g.acres/g.hrs) : 0;
+      const dLabel = {L1:'L1 Light',L2:'L2 Moderate',L3:'L3 Heavy'}[g.density]||g.density;
+      return `<tr>
+        <td style="color:var(--white);font-weight:600;">${dLabel}</td>
+        <td>${g.terrain}</td>
+        <td>${g.ground}</td>
+        <td style="color:var(--muted);">${g.jobs}</td>
+        <td>${g.acres.toFixed(2)}</td>
+        <td>${g.hrs.toFixed(1)}</td>
+        <td style="color:var(--yellow);font-weight:700;">${rate.toFixed(2)} ac/hr</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="7" style="color:var(--muted);font-size:12px;">Log jobs with acres, hours, and conditions to build your rates.</td></tr>';
+  }
 }
 
 // ── EXPENSES ──
