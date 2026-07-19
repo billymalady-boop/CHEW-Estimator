@@ -296,7 +296,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
       <p>Enter your 4-digit PIN to access rate settings</p>
       <div><input class="pin-input" id="pin-input" type="password" maxlength="4" placeholder="••••" onkeyup="checkPin(event)"></div>
       <div><button class="pin-btn" onclick="checkPin({key:'Enter'})">UNLOCK</button></div>
-      <div style="margin-top:12px;font-size:10px;color:#444;">Default PIN: 2580</div>
+      <div style="margin-top:12px;font-size:10px;color:#444;">Default PIN: 1411</div>
     </div>
     <!-- SETTINGS BODY (hidden until PIN) -->
     <div id="settings-body" style="display:none;">
@@ -393,23 +393,24 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
           <div style="font-size:10px;color:#888;margin-bottom:10px;line-height:1.5;">Enter YOUR real monthly numbers. This tells you what the truck must earn each day to not lose money, and what your job floors <i>should</i> be — instead of guessing. Defaults are rough Central Texas placeholders. Replace them.</div>
           <div style="font-size:10px;color:#F5C400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;margin-bottom:6px;">FIXED MONTHLY COSTS</div>
           <div class="settings-grid">
-            <div class="sf"><label>Trailer / equip payment</label><input type="number" id="rr-trailer" value="1500" oninput="calcRunRate()"><div class="hint">Monthly note(s)</div></div>
-            <div class="sf"><label>Insurance (GL + auto + inland)</label><input type="number" id="rr-ins" value="830" oninput="calcRunRate()"><div class="hint">Monthly premium</div></div>
-            <div class="sf"><label>Phone / internet / software</label><input type="number" id="rr-soft" value="250" oninput="calcRunRate()"><div class="hint">Jobber, phone, etc.</div></div>
-            <div class="sf"><label>Other fixed (storage, LLC, etc.)</label><input type="number" id="rr-other" value="100" oninput="calcRunRate()"><div class="hint">Monthly</div></div>
+            <div class="sf"><label>Truck + trailer payments</label><input type="number" id="rr-trailer" value="801" oninput="calcRunRate()"><div class="hint">F-350 $480 + trailer $321</div></div>
+            <div class="sf"><label>Insurance (GL + auto + inland)</label><input type="number" id="rr-ins" value="1424" oninput="calcRunRate()"><div class="hint">Monthly premium</div></div>
+            <div class="sf"><label>Phone / internet / software</label><input type="number" id="rr-soft" value="184" oninput="calcRunRate()"><div class="hint">Jobber $150 + phone + web</div></div>
+            <div class="sf"><label>Marketing + other fixed</label><input type="number" id="rr-other" value="3200" oninput="calcRunRate()"><div class="hint">Ads $3,000 + accounting</div></div>
+            <div class="sf"><label>Equipment depreciation</label><input type="number" id="rr-dep" value="1872" oninput="calcRunRate()"><div class="hint">$117K ÷ 6,000 hrs = $19.50/hr</div></div>
           </div>
           <div style="font-size:10px;color:#F5C400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;margin:12px 0 6px;">VARIABLE / OPERATING</div>
           <div class="settings-grid">
-            <div class="sf"><label>Fuel — monthly avg</label><input type="number" id="rr-fuel" value="500" oninput="calcRunRate()"><div class="hint">Truck + machine diesel</div></div>
-            <div class="sf"><label>Dump fees — monthly avg</label><input type="number" id="rr-dump" value="0" oninput="calcRunRate()"><div class="hint">Killeen Transfer Station</div></div>
-            <div class="sf"><label>Your / helper pay ($/hr)</label><input type="number" id="rr-wage" value="35" oninput="calcRunRate()"><div class="hint">Pay yourself — even a little</div></div>
-            <div class="sf"><label>Maint. reserve — monthly</label><input type="number" id="rr-maint" value="400" oninput="calcRunRate()"><div class="hint">Set aside for repairs</div></div>
+            <div class="sf"><label>Machine fuel — monthly avg</label><input type="number" id="rr-fuel" value="2352" oninput="calcRunRate()"><div class="hint">5 gal/hr × $4.90 × 96 hrs</div></div>
+            <div class="sf"><label>Dump fees — monthly avg</label><input type="number" id="rr-dump" value="0" oninput="calcRunRate()"><div class="hint">N/A — no haul-off service</div></div>
+            <div class="sf"><label>Your / helper pay ($/hr)</label><input type="number" id="rr-wage" value="40" oninput="calcRunRate()"><div class="hint">Operator wage — a real cost</div></div>
+            <div class="sf"><label>Maint. + teeth — monthly</label><input type="number" id="rr-maint" value="2208" oninput="calcRunRate()"><div class="hint">$12 maint + $11 teeth × 96 hrs</div></div>
           </div>
           <div style="font-size:10px;color:#F5C400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;margin:12px 0 6px;">OPERATING ASSUMPTIONS</div>
           <div class="settings-grid">
-            <div class="sf"><label>Working days / month</label><input type="number" id="rr-days" value="22" oninput="calcRunRate()"><div class="hint">Days the truck rolls</div></div>
-            <div class="sf"><label>Billable hours / working day</label><input type="number" id="rr-hrs" value="6" oninput="calcRunRate()"><div class="hint">Actual on-job hours</div></div>
-            <div class="sf"><label>Target gross margin (%)</label><input type="number" id="rr-margin" value="50" min="0" max="90" oninput="calcRunRate()"><div class="hint">50% floor · 65% healthy</div></div>
+            <div class="sf"><label>Working days / month</label><input type="number" id="rr-days" value="16" oninput="calcRunRate()"><div class="hint">1,100 billable hrs/yr ÷ 6</div></div>
+            <div class="sf"><label>Billable hours / working day</label><input type="number" id="rr-hrs" value="6" oninput="calcRunRate()"><div class="hint">Machine-running hours only</div></div>
+            <div class="sf"><label>Target gross margin (%)</label><input type="number" id="rr-margin" value="35" min="0" max="90" oninput="calcRunRate()"><div class="hint">25% floor · 35% good · 40% great</div></div>
             <div class="sf"><label>Typical debris-only job (hrs)</label><input type="number" id="rr-debhrs" value="1.5" step="0.25" oninput="calcRunRate()"><div class="hint">Door-to-door, small haul</div></div>
           </div>
           <div id="rr-output" style="margin-top:14px;background:#0a0a0a;border:1px solid #2a2a2a;padding:14px;display:none;"></div>
@@ -417,7 +418,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
         <div class="settings-section">
           <h3>PIN MANAGEMENT</h3>
           <div class="settings-grid">
-            <div class="sf"><label>Change PIN (4 digits)</label><input type="password" id="s-pin-new" maxlength="4" placeholder="New PIN"><div class="hint">Current default: 2580</div></div>
+            <div class="sf"><label>Change PIN (4 digits)</label><input type="password" id="s-pin-new" maxlength="4" placeholder="New PIN"><div class="hint">Current default: 1411</div></div>
             <div class="sf"><label>Confirm New PIN</label><input type="password" id="s-pin-confirm" maxlength="4" placeholder="Confirm PIN"></div>
           </div>
         </div>
@@ -1408,7 +1409,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
     <div class="pl"><span class="pll">Trip charges cost</span><span class="plv" id="p-trip">—</span></div>
     <div class="pl" id="p-teeth-row" style="display:none"><span class="pll">Mulcher teeth wear</span><span class="plv" id="p-teeth">—</span></div>
     <div class="ptt"><span class="ptl">Est. Profit</span><span class="ptv" id="p-tot">—</span></div>
-    <div id="p-floor-warn" style="display:none;background:#3a1212;border:1px solid #e74c3c;color:#ff6b6b;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 10px;border-radius:6px;margin-top:8px;text-align:center;">⚠ Below $60/hr profit floor</div>
+    <div id="p-floor-warn" style="display:none;background:#3a1212;border:1px solid #e74c3c;color:#ff6b6b;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 10px;border-radius:6px;margin-top:8px;text-align:center;">⚠ Below margin floor</div>
   </div>
   <!-- BUTTONS -->
   <div style="margin-top:14px">
@@ -2044,7 +2045,7 @@ function calcTot(){
                 +tripCostOf('dem-trip')*extra(fv('dem-lo')||1)*(S.demOn?1:0);
   const teeth=S.clrTeeth||0;
   // machine cost only on machine hours; operator wage on all hours (incl hand-load); demo+debris disposal both subtracted
-  const mach=machH*44,oper=totH*35,profit=total-mach-oper-S.debDisp-(S.demDisp||0)-S.grvMat-S.mob-tripTotal-teeth;
+  const mach=machH*36.50,oper=totH*40,profit=total-mach-oper-S.debDisp-(S.demDisp||0)-S.grvMat-S.mob-tripTotal-teeth;
   $('p-mach').textContent=fmt(mach);$('p-oper').textContent=fmt(oper);
   $('p-disp').textContent=fmt(S.debDisp+(S.demDisp||0));$('p-mat').textContent=fmt(S.grvMat);
   $('p-trip').textContent=fmt(tripTotal);
@@ -2052,13 +2053,20 @@ function calcTot(){
   $('p-teeth-row').style.display=teeth>0?'flex':'none';
   const profitPerHr=totH>0?profit/totH:0;
   $('p-tot').textContent=fmt(profit)+(totH>0?' ('+fmt(profitPerHr)+'/hr)':'');
-  // $60/hr business-profit floor warning (build spec section 2)
+  // Two separate gates:
+  //   REVENUE floor $168.33/hr — below this the job loses money outright
+  //   PROFIT floor $60/hr — profit after costs; below this it isn't worth doing
   const pfEl=$('p-floor-warn');
   if(pfEl){
-    if(totH>0&&profitPerHr<60){
-      pfEl.textContent='⚠ BELOW $60/hr PROFIT FLOOR — reprice or raise scope';
+    const revPerHr = totH>0 ? total/totH : 0;
+    if(totH>0&&revPerHr<168.33){
+      pfEl.textContent='⚠ REVENUE BELOW BREAK-EVEN ($168.33/hr) — THIS JOB LOSES MONEY';
       pfEl.style.display='block';
       $('p-tot').style.color='#e74c3c';
+    } else if(totH>0&&profitPerHr<60){
+      pfEl.textContent='⚠ BELOW $60/hr PROFIT FLOOR — reprice or raise scope';
+      pfEl.style.display='block';
+      $('p-tot').style.color='#cc8833';
     } else {
       pfEl.style.display='none';
       $('p-tot').style.color='';
@@ -3206,6 +3214,7 @@ function calcDebRes() {
 function calcRunRate() {
   const g = id => parseFloat($(id) && $(id).value) || 0;
   const trailer = g('rr-trailer'), ins = g('rr-ins'), soft = g('rr-soft'), other = g('rr-other');
+  const dep = g('rr-dep');
   const fuel = g('rr-fuel'), dump = g('rr-dump'), maint = g('rr-maint');
   const wage = g('rr-wage');
   const days = Math.max(1, g('rr-days')), hrs = Math.max(0.5, g('rr-hrs'));
@@ -3214,7 +3223,7 @@ function calcRunRate() {
   const out = $('rr-output');
   if (!out) return;
 
-  const fixedMo = trailer + ins + soft + other;
+  const fixedMo = trailer + ins + soft + other + dep;
   const laborMo = wage * hrs * days;            // your time, valued
   const varMo = fuel + dump + maint;            // operating
   const totalMo = fixedMo + laborMo + varMo;
@@ -3228,11 +3237,12 @@ function calcRunRate() {
   const reqHourly = costPerHr / (1 - margin);
   // Recommended floors: a typical short job's burdened cost, marked up to margin
   const debrisFloor = reqHourly * debHrs;       // debris-only suggested floor
-  // Machine job carries the same burdened hour plus machine wear (~$44/hr internal)
-  const machineFloor = (costPerHr + 44) / (1 - margin) * 2; // 2-hr machine minimum
+  // Machine job floor: burdened hour marked up to margin, across a 6-hr minimum day
+  // (maintenance + teeth already included in variable costs above — no extra adder)
+  const machineFloor = reqHourly * 6;
 
   const f = n => '$' + Math.round(n).toLocaleString();
-  const cur249 = 249, cur400 = 400;
+  const cur249 = 249, cur400 = 1600;
   const debDelta = debrisFloor - cur249;
   const machDelta = machineFloor - cur400;
   const flag = (delta, cur) => {
