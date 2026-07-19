@@ -664,7 +664,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
       <div class="cl">Clearing Subtotal</div>
       <div class="cv" id="clr-sub">—</div>
     </div>
-    <div class="warn" id="clr-min">⚠ Below $400 minimum — adjusted up to $400</div>
+    <div class="warn" id="clr-min">⚠ Below job minimum — adjusted up to floor</div>
     <div class="warn" id="clr-haul">⚠ Haul-off selected — activate the Debris section below and it will be added to your total</div>
     <div class="info" style="margin-top:8px">Hidden hazard note: Tall brush may conceal old fence wire, buried rock, stumps, and unmarked structures. Density and terrain may differ from visual estimate. This section will be flagged as estimated on all documents.</div>
   </div>
@@ -1409,6 +1409,8 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
     <div class="pl"><span class="pll">Trip charges cost</span><span class="plv" id="p-trip">—</span></div>
     <div class="pl" id="p-teeth-row" style="display:none"><span class="pll">Mulcher teeth wear</span><span class="plv" id="p-teeth">—</span></div>
     <div class="ptt"><span class="ptl">Est. Profit</span><span class="ptv" id="p-tot">—</span></div>
+    <div id="p-margin-line" style="font-size:11px;color:#F5C400;text-align:center;margin-top:6px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;">True margin: —</div>
+    <div style="font-size:9px;color:#666;text-align:center;margin-top:2px;">vs full burdened cost · pass-throughs excluded</div>
     <div id="p-floor-warn" style="display:none;background:#3a1212;border:1px solid #e74c3c;color:#ff6b6b;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 10px;border-radius:6px;margin-top:8px;text-align:center;">⚠ Below margin floor</div>
   </div>
   <!-- BUTTONS -->
@@ -1431,7 +1433,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
       Land Planer: $165/hr · 2hr min<br>
       Digging Arm: $165/hr · 2hr min<br>
       Jackhammer: $175/hr · 2hr min<br>
-      Minimum Job: $400<br>
+      Machine Min: $1,600 · Mulch Min: $2,100<br>
       Residential Debris: $65/cy · $249 min<br>
       Disposal: $92.10/ton<br>
       Trip Charge: $65/load (default)<br>
@@ -2053,20 +2055,49 @@ function calcTot(){
   $('p-teeth-row').style.display=teeth>0?'flex':'none';
   const profitPerHr=totH>0?profit/totH:0;
   $('p-tot').textContent=fmt(profit)+(totH>0?' ('+fmt(profitPerHr)+'/hr)':'');
-  // Two separate gates:
-  //   REVENUE floor $168.33/hr — below this the job loses money outright
-  //   PROFIT floor $60/hr — profit after costs; below this it isn't worth doing
+  // ── TRUE MARGIN GATE ──────────────────────────────────────────────
+  // Measured against the FULL burdened cost from the Rates run-rate calculator
+  // (insurance, payments, marketing, depreciation, fuel, maint, teeth, wage).
+  // Pass-throughs (gravel material, disposal, mobilization) are excluded from
+  // both revenue and cost so the margin reflects the WORK, not reimbursements.
+  const COST_HR = window.CHEW_COST_HR || 168.33;   // falls back to locked model
+  const passThru = (S.grvMat||0) + (S.debDisp||0) + (S.demDisp||0) + (S.mob||0) + (tripTotal||0);
+  const workRev  = total - passThru;               // revenue for the work itself
+  const workCost = totH * COST_HR;                 // burdened cost of those hours
+  const trueProfit = workRev - workCost;
+  const trueMarginPct = workRev > 0 ? (trueProfit / workRev) * 100 : 0;
+  const truePerHr = totH > 0 ? trueProfit / totH : 0;
+
+  const mgEl = $('p-margin-line');
+  if (mgEl) {
+    mgEl.textContent = totH > 0
+      ? 'True margin: ' + trueMarginPct.toFixed(0) + '%  ·  ' + fmt(truePerHr) + '/hr profit'
+      : 'True margin: —';
+  }
+
   const pfEl=$('p-floor-warn');
   if(pfEl){
-    const revPerHr = totH>0 ? total/totH : 0;
-    if(totH>0&&revPerHr<168.33){
-      pfEl.textContent='⚠ REVENUE BELOW BREAK-EVEN ($168.33/hr) — THIS JOB LOSES MONEY';
+    const revPerHr = totH>0 ? workRev/totH : 0;
+    if(totH>0&&revPerHr<COST_HR){
+      pfEl.textContent='⚠ BELOW BREAK-EVEN ('+fmt(COST_HR)+'/hr) — THIS JOB LOSES MONEY';
+      pfEl.style.background='#3a1212';pfEl.style.borderColor='#e74c3c';pfEl.style.color='#ff6b6b';
       pfEl.style.display='block';
       $('p-tot').style.color='#e74c3c';
-    } else if(totH>0&&profitPerHr<60){
-      pfEl.textContent='⚠ BELOW $60/hr PROFIT FLOOR — reprice or raise scope';
+    } else if(totH>0&&trueMarginPct<35){
+      pfEl.textContent='⚠ '+trueMarginPct.toFixed(0)+'% MARGIN — below your 35% minimum';
+      pfEl.style.background='#3a1212';pfEl.style.borderColor='#e74c3c';pfEl.style.color='#ff6b6b';
+      pfEl.style.display='block';
+      $('p-tot').style.color='#e74c3c';
+    } else if(totH>0&&trueMarginPct<50){
+      pfEl.textContent='◆ '+trueMarginPct.toFixed(0)+'% margin — acceptable, below 50% target';
+      pfEl.style.background='#3a2f12';pfEl.style.borderColor='#cc8833';pfEl.style.color='#e8a33d';
       pfEl.style.display='block';
       $('p-tot').style.color='#cc8833';
+    } else if(totH>0){
+      pfEl.textContent='✓ '+trueMarginPct.toFixed(0)+'% margin — at or above 50% target';
+      pfEl.style.background='#12301a';pfEl.style.borderColor='#2ecc71';pfEl.style.color='#2ecc71';
+      pfEl.style.display='block';
+      $('p-tot').style.color='#2ecc71';
     } else {
       pfEl.style.display='none';
       $('p-tot').style.color='';
@@ -2157,7 +2188,13 @@ function buildLineRows() {
   const contAmt=base*cont;
   // Contingency rolled into total — not shown as line item on email
   const cashDiscPct = parseFloat(sv('cash-disc'))/100||0;
-  let total = Math.max(400, base+contAmt);
+  // Job floor — must match calcTot: debris-only $249 · mulching 6×MUL_RATE ($2,100) · other machine work $1,600
+  const emDebOnly = S.debOn && !(S.clrOn||S.grvOn||S.demOn||S.grdOn||S.trnOn||S.trlOn||S.stpOn);
+  let emFloor;
+  if(emDebOnly){ emFloor=249; }
+  else if(S.clrOn && sv('clr-att')==='mulch'){ emFloor=Math.round(6*MUL_RATE); }
+  else { emFloor=1600; }
+  let total = Math.max(emFloor, base+contAmt);
   const cashDiscAmt = cashDiscPct>0 ? Math.round(total*cashDiscPct) : 0;
   total = total - cashDiscAmt;
   // Payment methods
@@ -3232,6 +3269,8 @@ function calcRunRate() {
   const dailyRunRate = totalMo / days;          // cost to operate per working day
   const billableHrsMo = hrs * days;
   const costPerHr = totalMo / billableHrsMo;    // fully-burdened hourly cost
+  window.CHEW_COST_HR = costPerHr;              // shared with quote-panel margin gate
+  if (typeof calcTot === 'function') { try { calcTot(); } catch(e){} }
   // Required revenue = cost / (1 - margin)
   const reqDaily = dailyRunRate / (1 - margin);
   const reqHourly = costPerHr / (1 - margin);
@@ -3269,7 +3308,7 @@ function calcRunRate() {
     '<div style="font-family:\'Barlow Condensed\',sans-serif;font-weight:900;font-size:15px;color:#F5C400;letter-spacing:1px;">FLOOR CHECK</div>' +
     '<div style="font-size:12px;color:#cfcfcf;margin-top:8px;line-height:1.6;">' +
       '<div><b>Debris-only floor:</b> suggested <b style="color:#F5C400;">' + f(debrisFloor) + '</b> for a ' + debHrs.toFixed(2) + '-hr job &nbsp;·&nbsp; you charge <b>$249</b> &nbsp; ' + flag(debDelta, cur249) + '</div>' +
-      '<div style="margin-top:4px;"><b>Machine job floor:</b> suggested <b style="color:#F5C400;">' + f(machineFloor) + '</b> for a 2-hr machine min &nbsp;·&nbsp; you charge <b>$400</b> &nbsp; ' + flag(machDelta, cur400) + '</div>' +
+      '<div style="margin-top:4px;"><b>Machine job floor:</b> suggested <b style="color:#F5C400;">' + f(machineFloor) + '</b> for a 6-hr machine day &nbsp;·&nbsp; you charge <b>$1,600</b> &nbsp; ' + flag(machDelta, cur400) + '</div>' +
     '</div>' +
     '<div style="font-size:10px;color:#777;margin-top:10px;font-style:italic;line-height:1.5;">Suggested floors are burdened cost marked up to your target margin. They are a sanity check, not a hard rule — your real floor also reflects what your market will bear. If a suggested floor sits well above what you charge, you are leaving margin on the table or absorbing windshield time.</div>';
 }
