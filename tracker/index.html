@@ -772,6 +772,7 @@ body {
       <div class="topbar-title">Job Tracker</div>
     </div>
     <div class="topbar-actions">
+      <button class="btn" onclick="exportJobsCSV()" style="background:#1a1a1a;border:1px solid #F5C400;color:#F5C400;">⬇ Export Jobs CSV</button>
       <button class="btn btn-dark" onclick="showTab('expenses')">+ Expense</button>
       <button class="btn btn-red" onclick="openJobModal()">+ Log Job</button>
     </div>
@@ -936,13 +937,15 @@ body {
       <table class="jobs-table">
         <thead>
           <tr>
+            <th>Attachment</th>
             <th>Density</th>
             <th>Terrain</th>
             <th>Ground</th>
             <th>Jobs</th>
             <th>Total Acres</th>
-            <th>Total Hours</th>
+            <th>Prod. Hours</th>
             <th>Avg Acres/Hour</th>
+            <th>Range</th>
           </tr>
         </thead>
         <tbody id="prod-rate-body">
@@ -1082,8 +1085,23 @@ body {
       <div class="f"><label>Actual Hours</label><input type="number" id="j-hrs-act" placeholder="0" min="0" step="0.5"></div>
     </div>
 
-    <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+    <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="f"><label>Attachment Used</label>
+        <select id="j-attach">
+          <option value="">—</option>
+          <option value="Mulcher">SP-900 Mulcher</option>
+          <option value="Mower">Brush Mower</option>
+          <option value="Grapple">Grapple</option>
+          <option value="Bucket">Bucket</option>
+          <option value="Stump">Stump Grinder</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="f"><label>Delay / Lost Hours</label><input type="number" id="j-hrs-delay" placeholder="0" min="0" step="0.5"><div class="hint" style="font-size:9px;color:#666;">breakdowns, snags, repositioning — NOT cutting time</div></div>
       <div class="f"><label>Acres Cleared</label><input type="number" id="j-acres" placeholder="0" min="0" step="0.05"></div>
+    </div>
+
+    <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;">
       <div class="f"><label>Density</label>
         <select id="j-density">
           <option value="">—</option>
@@ -1313,6 +1331,47 @@ function exportExpensesCSV() {
   URL.revokeObjectURL(url);
 }
 
+// ── JOBS CSV EXPORT (for Chewy — work-rate analysis) ──
+function exportJobsCSV() {
+  let js = loadJobs();
+  if (!js.length) { alert('No jobs to export yet.'); return; }
+  js = js.slice().sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+  const esc = v => {
+    v = (v===null||v===undefined) ? '' : String(v);
+    return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  };
+  const headers = [
+    'Date','Customer','Zip','Distance_mi','Job_Type','Status','Lead_Source',
+    'Attachment','Density','Terrain','Ground',
+    'Acres','Est_Hours','Actual_Hours','Delay_Hours','Productive_Hours','Acres_per_Prod_Hour',
+    'Revenue','Material_Cost','Disposal_Cost','Other_Cost',
+    'Payment_Method','Quote_Num','Notes'
+  ];
+  const rows = js.map(j => {
+    const acres = parseFloat(j.acres)||0;
+    const actHrs = parseFloat(j.hrsAct)||0;
+    const delayHrs = parseFloat(j.hrsDelay)||0;
+    const prodHrs = actHrs - delayHrs;
+    const acPerHr = (acres>0 && prodHrs>0) ? (acres/prodHrs).toFixed(3) : '';
+    return [
+      j.date||'', j.customer||'', j.zip||'', j.dist||'', j.type||'', j.status||'', j.source||'',
+      j.attach||'', j.density||'', j.terrain||'', j.ground||'',
+      acres||'', j.hrsEst||'', j.hrsAct||'', j.hrsDelay||'',
+      (prodHrs>0?prodHrs.toFixed(1):''), acPerHr,
+      j.revenue||'', j.costMat||'', j.costDisp||'', j.costOther||'',
+      j.payment||'', j.quoteNum||'', j.notes||''
+    ].map(esc).join(',');
+  });
+  const csv = headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = 'CHEW_jobs_'+stamp+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // ── HELPERS ──
 const fmt = n => '$' + Math.round(n).toLocaleString();
 const fmtDec = n => '$' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -1368,11 +1427,11 @@ function openJobModal(id=null) {
 }
 
 function clearJobForm() {
-  ['j-date','j-customer','j-zip','j-dist','j-revenue','j-hrs-est','j-hrs-act','j-acres','j-cost-mat','j-cost-disp','j-cost-other','j-quote-num','j-notes'].forEach(id => {
+  ['j-date','j-customer','j-zip','j-dist','j-revenue','j-hrs-est','j-hrs-act','j-hrs-delay','j-acres','j-cost-mat','j-cost-disp','j-cost-other','j-quote-num','j-notes'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
-  ['j-type','j-status','j-source','j-payment','j-density','j-terrain','j-ground'].forEach(id => {
+  ['j-type','j-status','j-source','j-payment','j-attach','j-density','j-terrain','j-ground'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.selectedIndex = 0;
   });
@@ -1388,7 +1447,7 @@ function populateJobForm(j) {
   set('j-dist', j.dist); set('j-revenue', j.revenue); set('j-hrs-est', j.hrsEst);
   set('j-hrs-act', j.hrsAct); set('j-cost-mat', j.costMat); set('j-cost-disp', j.costDisp);
   set('j-cost-other', j.costOther); set('j-quote-num', j.quoteNum); set('j-notes', j.notes);
-  set('j-acres', j.acres); set('j-density', j.density); set('j-terrain', j.terrain); set('j-ground', j.ground);
+  set('j-acres', j.acres); set('j-hrs-delay', j.hrsDelay); set('j-attach', j.attach); set('j-density', j.density); set('j-terrain', j.terrain); set('j-ground', j.ground);
   set('j-type', j.type); set('j-status', j.status); set('j-source', j.source); set('j-payment', j.payment);
   document.querySelectorAll('.attach-cb input').forEach(cb => {
     const on = (j.attachments||[]).includes(cb.value);
@@ -1426,6 +1485,8 @@ function saveJob() {
     revenue: rev,
     hrsEst: document.getElementById('j-hrs-est').value,
     hrsAct: document.getElementById('j-hrs-act').value,
+    hrsDelay: document.getElementById('j-hrs-delay').value,
+    attach: document.getElementById('j-attach').value,
     acres: document.getElementById('j-acres').value,
     density: document.getElementById('j-density').value,
     terrain: document.getElementById('j-terrain').value,
@@ -1900,35 +1961,52 @@ function renderInsights() {
   document.getElementById('benchmark-tbody').innerHTML = benchRows.join('');
 
   // ── PRODUCTION RATES (real acres/hour from completed jobs) ──
+  // IE method: key by attachment + conditions; use PRODUCTIVE hours (actual minus delay);
+  // report per-job average with min/max spread; flag provisional under 5 jobs.
   const prodGroups = {};
   jobs.forEach(j => {
     const acres = parseFloat(j.acres)||0;
-    const hrs = parseFloat(j.hrsAct)||0;
-    // only jobs with real acres + hours + at least density recorded
-    if (acres<=0 || hrs<=0 || !j.density) return;
-    const key = `${j.density}|${j.terrain||'—'}|${j.ground||'—'}`;
-    if (!prodGroups[key]) prodGroups[key] = {density:j.density, terrain:j.terrain||'—', ground:j.ground||'—', jobs:0, acres:0, hrs:0};
-    prodGroups[key].jobs++;
-    prodGroups[key].acres += acres;
-    prodGroups[key].hrs += hrs;
+    const actHrs = parseFloat(j.hrsAct)||0;
+    const delayHrs = parseFloat(j.hrsDelay)||0;
+    const prodHrs = actHrs - delayHrs;              // productive cutting time only
+    if (acres<=0 || prodHrs<=0 || !j.density) return;
+    const attach = j.attach || '—';
+    const key = `${attach}|${j.density}|${j.terrain||'—'}|${j.ground||'—'}`;
+    if (!prodGroups[key]) prodGroups[key] = {attach, density:j.density, terrain:j.terrain||'—', ground:j.ground||'—', jobs:0, acres:0, prodHrs:0, rates:[]};
+    const g = prodGroups[key];
+    g.jobs++;
+    g.acres += acres;
+    g.prodHrs += prodHrs;
+    g.rates.push(acres/prodHrs);                    // per-job rate for spread
   });
   const densOrder = {L1:1,L2:2,L3:3};
-  const prodRows = Object.values(prodGroups).sort((a,b)=>(densOrder[a.density]||9)-(densOrder[b.density]||9) || a.terrain.localeCompare(b.terrain));
+  const prodRows = Object.values(prodGroups).sort((a,b)=>
+    (a.attach.localeCompare(b.attach)) ||
+    (densOrder[a.density]||9)-(densOrder[b.density]||9) ||
+    a.terrain.localeCompare(b.terrain));
   const pb = document.getElementById('prod-rate-body');
   if (pb) {
     pb.innerHTML = prodRows.length ? prodRows.map(g => {
-      const rate = g.hrs>0 ? (g.acres/g.hrs) : 0;
+      const avgRate = g.acres/g.prodHrs;                       // pooled (for job-time estimates)
+      const perJobAvg = g.rates.reduce((a,b)=>a+b,0)/g.rates.length; // true mean per job
+      const lo = Math.min(...g.rates), hi = Math.max(...g.rates);
       const dLabel = {L1:'L1 Light',L2:'L2 Moderate',L3:'L3 Heavy'}[g.density]||g.density;
+      const provisional = g.jobs < 5;
+      const rateColor = provisional ? '#cc8833' : 'var(--yellow)';
+      const spread = g.jobs>1 ? `${lo.toFixed(2)}–${hi.toFixed(2)}` : '—';
+      const flag = provisional ? ' <span style="color:#cc8833;font-size:9px;">PROV</span>' : '';
       return `<tr>
-        <td style="color:var(--white);font-weight:600;">${dLabel}</td>
+        <td style="color:var(--white);font-weight:600;">${g.attach}</td>
+        <td>${dLabel}</td>
         <td>${g.terrain}</td>
         <td>${g.ground}</td>
-        <td style="color:var(--muted);">${g.jobs}</td>
+        <td style="color:var(--muted);">${g.jobs}${flag}</td>
         <td>${g.acres.toFixed(2)}</td>
-        <td>${g.hrs.toFixed(1)}</td>
-        <td style="color:var(--yellow);font-weight:700;">${rate.toFixed(2)} ac/hr</td>
+        <td>${g.prodHrs.toFixed(1)}</td>
+        <td style="color:${rateColor};font-weight:700;">${avgRate.toFixed(2)} ac/hr</td>
+        <td style="color:var(--muted);font-size:11px;">${spread}</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="7" style="color:var(--muted);font-size:12px;">Log jobs with acres, hours, and conditions to build your rates.</td></tr>';
+    }).join('') : '<tr><td colspan="9" style="color:var(--muted);font-size:12px;">Log jobs with attachment, acres, productive hours, and conditions to build your rates.</td></tr>';
   }
 }
 
