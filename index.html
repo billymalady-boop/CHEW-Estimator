@@ -479,6 +479,16 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
       <div class="f"><label>Customer Name</label><input type="text" id="cn" placeholder="Full name" oninput="sp()"></div>
       <div class="f"><label>Customer Phone</label><input type="text" id="cp" placeholder="(737) 235-1335" oninput="sp()"></div>
     </div>
+    <!-- SAVE / LOAD QUOTE (this device only) -->
+    <div style="background:#141414;border:1px solid #333;border-radius:6px;padding:10px 12px;margin:4px 0 10px;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button onclick="saveQuote()" style="background:#1a1a1a;border:1px solid #F5C400;color:#F5C400;padding:6px 14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border-radius:4px;">💾 Save Quote</button>
+        <select id="load-quote-sel" style="flex:1;min-width:140px;background:#1a1a1a;color:#eee;border:1px solid #333;border-radius:4px;padding:6px;font-size:13px;"><option value="">— Load saved quote —</option></select>
+        <button onclick="loadQuote()" style="background:#1a3a1a;border:1px solid #2ecc71;color:#2ecc71;padding:6px 14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border-radius:4px;">Load</button>
+        <button onclick="deleteQuote()" style="background:#2a1414;border:1px solid #cc2222;color:#ff6b6b;padding:6px 12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border-radius:4px;">Delete</button>
+      </div>
+      <div class="hint" style="margin-top:6px;">Saves on THIS device only (not synced to PC or Jobber). Names by customer — saving the same name again keeps both with a date stamp.</div>
+    </div>
     <!-- ADDRESS LOOKUP — No API key needed -->
     <div class="api-setup" id="api-setup">
       <div class="api-title">📍 Address Distance Lookup</div>
@@ -1483,7 +1493,74 @@ window.onload=()=>{
   $('qn').value='CHEW-'+Date.now().toString().slice(-5);
   selMat('brush');
   sp(); calcDem(); calcGrd(); calcTot();
+  refreshQuoteList();
 };
+
+// ── SAVE / LOAD QUOTES (this device only) ──
+const QUOTE_KEY='chew_saved_quotes';
+const SVC_TOGGLES=['clrOn','grvOn','debOn','demOn','grdOn','trnOn','rntOn','trlOn','stpOn'];
+function loadQuoteStore(){ try{return JSON.parse(localStorage.getItem(QUOTE_KEY)||'{}');}catch(e){return {};} }
+function saveQuoteStore(o){ localStorage.setItem(QUOTE_KEY, JSON.stringify(o)); }
+function snapshotQuote(){
+  const fields={};
+  document.querySelectorAll('input,select,textarea').forEach(el=>{
+    if(!el.id) return;
+    if(el.type==='checkbox'||el.type==='radio') fields[el.id]={c:el.checked};
+    else fields[el.id]={v:el.value};
+  });
+  const svc={}; SVC_TOGGLES.forEach(k=>svc[k]=!!S[k]);
+  return {fields, svc, ts:new Date().toISOString()};
+}
+function saveQuote(){
+  let name=($('cn')&&$('cn').value.trim())||'';
+  if(!name){ name=prompt('Name this quote (customer name):')||''; name=name.trim(); }
+  if(!name){ alert('Enter a customer name first, then Save.'); return; }
+  const store=loadQuoteStore();
+  // if name already exists, append date stamp so the older one isn't lost
+  let key=name;
+  if(store[key]){ key=name+' ('+new Date().toLocaleDateString()+')'; }
+  store[key]=snapshotQuote();
+  saveQuoteStore(store);
+  refreshQuoteList();
+  alert('Saved: '+key);
+}
+function refreshQuoteList(){
+  const sel=$('load-quote-sel'); if(!sel) return;
+  const store=loadQuoteStore();
+  const keys=Object.keys(store).sort((a,b)=> (store[b].ts||'').localeCompare(store[a].ts||''));
+  sel.innerHTML='<option value="">— Load saved quote —</option>'+keys.map(k=>`<option value="${k.replace(/"/g,'&quot;')}">${k}</option>`).join('');
+}
+function loadQuote(){
+  const sel=$('load-quote-sel'); if(!sel||!sel.value) { alert('Pick a saved quote from the list first.'); return; }
+  const store=loadQuoteStore(); const q=store[sel.value];
+  if(!q){ alert('Quote not found.'); return; }
+  // restore service toggles: set S flag AND the visual state (t-/p-/b- classes) to match onOff()
+  if(q.svc) SVC_TOGGLES.forEach(k=>{
+    const svc=k.replace('On',''); const want=!!q.svc[k];
+    S[k]=want;
+    const t=$('t-'+svc),p=$('p-'+svc),b=$('b-'+svc);
+    if(t)t.classList.toggle('on',want);
+    if(p)p.classList.toggle('off',!want);
+    if(b&&want)b.classList.add('open');
+  });
+  // restore all field values
+  Object.entries(q.fields||{}).forEach(([id,val])=>{
+    const el=document.getElementById(id); if(!el) return;
+    if('c' in val){ el.checked=val.c; } else { el.value=val.v; }
+  });
+  // re-sync split modes and re-run every calculation
+  if(typeof syncMixModes==='function') syncMixModes();
+  ['clr','grv','deb','dem','grd','trn','trl','stp'].forEach(s=>{ try{recalc(s);}catch(e){} });
+  try{calcMob();}catch(e){} try{calcRnt();}catch(e){} try{calcRunRate();}catch(e){}
+  try{sp();}catch(e){} try{calcTot();}catch(e){}
+  alert('Loaded: '+sel.value);
+}
+function deleteQuote(){
+  const sel=$('load-quote-sel'); if(!sel||!sel.value){ alert('Pick a saved quote to delete.'); return; }
+  if(!confirm('Delete saved quote "'+sel.value+'"? This only removes it from this device.')) return;
+  const store=loadQuoteStore(); delete store[sel.value]; saveQuoteStore(store);
+  refreshQuoteList();
+}
 // ── PANEL TOGGLES ──
 function tog(id){
   const b=$(id),ar=$(id+'-arr');
