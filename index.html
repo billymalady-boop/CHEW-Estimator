@@ -602,6 +602,20 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
         </div>
         <input type="hidden" id="clr-den" value="1">
         <div class="hint">L1=open pasture · L2=mixed cedar · L3=thick brush/deadfall</div>
+        <div style="margin-top:6px;padding:6px 8px;background:#1a1a1a;border:1px solid #333;border-radius:4px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#F5C400;">
+            <input type="checkbox" id="clr-mixden" onchange="toggleMixedDensity();calcClr()" style="width:16px;height:16px;">
+            MIXED DENSITY — split acreage by L1 / L2 / L3
+          </label>
+          <div id="clr-mixden-fields" style="display:none;margin-top:8px;">
+            <div class="g3">
+              <div class="f"><label style="font-size:10px;">L1 Sparse acres</label><input type="number" id="clr-ac-l1" placeholder="0.0" step="0.25" min="0" oninput="calcClr()"></div>
+              <div class="f"><label style="font-size:10px;">L2 Moderate acres</label><input type="number" id="clr-ac-l2" placeholder="0.0" step="0.25" min="0" oninput="calcClr()"></div>
+              <div class="f"><label style="font-size:10px;">L3 Heavy acres</label><input type="number" id="clr-ac-l3" placeholder="0.0" step="0.25" min="0" oninput="calcClr()"></div>
+            </div>
+            <div class="hint" id="clr-mixden-hint">Enter acres for each density — each priced at its own rate and summed. Terrain multiplier applies across all.</div>
+          </div>
+        </div>
       </div>
       <div class="f"><label>Primary Attachment</label>
         <div class="rg">
@@ -1594,15 +1608,47 @@ function toggleMixedTerrain(){
   const f=$('clr-mixed-fields'); if(f)f.style.display=on?'block':'none';
   // disable the single acreage + terrain buttons visually when mixed is on (they're ignored)
   const ac=$('clr-ac'); if(ac)ac.disabled=on;
+  // mixed terrain and mixed density are mutually exclusive
+  if(on){ const md=$('clr-mixden'); if(md&&md.checked){md.checked=false;toggleMixedDensity();} }
+}
+function toggleMixedDensity(){
+  const on=$('clr-mixden')&&$('clr-mixden').checked;
+  const f=$('clr-mixden-fields'); if(f)f.style.display=on?'block':'none';
+  const ac=$('clr-ac'); if(ac)ac.disabled=on || ($('clr-mixed')&&$('clr-mixed').checked);
+  // mixed density and mixed terrain are mutually exclusive
+  if(on){ const mt=$('clr-mixed'); if(mt&&mt.checked){mt.checked=false;toggleMixedTerrain();} }
 }
 function calcClr(){
   if(!S.clrOn){S.clr=0;S.clrH=0;updAmt('clr',0,false,'');calcTot();return;}
   const den=sv('clr-den'),rck=parseFloat(sv('clr-rck')),att=sv('clr-att');
   const perAcre=(CLR_PERACRE[att]||CLR_PERACRE.brush)[den];
   const mixed=$('clr-mixed')&&$('clr-mixed').checked;
+  const mixden=$('clr-mixden')&&$('clr-mixden').checked;
   let ac, sub, hrs, rate, effLabel;
 
-  if(mixed){
+  if(mixden){
+    // Blended by DENSITY: each density band priced at its own rate, one terrain mx across all
+    const a1=fv('clr-ac-l1'), a2=fv('clr-ac-l2'), a3=fv('clr-ac-l3');
+    ac=a1+a2+a3;
+    const ter=parseFloat(sv('clr-ter'));
+    const mx=ter*rck;
+    const tbl=(CLR_PERACRE[att]||CLR_PERACRE.brush);
+    const bandSub=(qty,d)=>qty*tbl[d]*mx;
+    sub=bandSub(a1,'1')+bandSub(a2,'2')+bandSub(a3,'3');
+    if(att==='mulch'){
+      const bandHrs=(qty,d)=>(qty/MUL_APD[d])*MUL_DAYHRS*mx;
+      hrs=bandHrs(a1,'1')+bandHrs(a2,'2')+bandHrs(a3,'3');
+      rate=MUL_RATE; S.clrTeeth=ac>0?hrs*MUL_TEETH:0;
+    } else {
+      const bandHrs=(qty,d)=>(qty/CLR_APH[d])*mx;
+      hrs=bandHrs(a1,'1')+bandHrs(a2,'2')+bandHrs(a3,'3');
+      rate=CLR_RATE[att]; S.clrTeeth=0;
+    }
+    const acEl=$('clr-ac'); if(acEl){acEl.value=ac>0?ac:'';}
+    const mh=$('clr-mixden-hint'); if(mh)mh.textContent='Total '+ac.toFixed(2)+' ac · L1 '+a1+' / L2 '+a2+' / L3 '+a3+' — each at its own rate';
+    $('clr-mx').textContent=mx.toFixed(2)+'×';
+    $('clr-er').textContent=ac>0?'$'+Math.round(sub/ac)+'/ac avg':'—';
+  } else if(mixed){
     // Blended: each terrain band priced separately, then summed
     const af=fv('clr-ac-flat'), as=fv('clr-ac-slope'), ah=fv('clr-ac-hill');
     ac=af+as+ah;
