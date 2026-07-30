@@ -644,9 +644,9 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
           </label>
           <div id="clr-mixed-fields" style="display:none;margin-top:8px;">
             <div class="g3">
-              <div class="f"><label style="font-size:10px;">Flat acres (×1.0)</label><input type="number" id="clr-ac-flat" placeholder="0.0" step="0.25" min="0" oninput="calcClr()"></div>
-              <div class="f"><label style="font-size:10px;">Sloped acres (×1.10)</label><input type="number" id="clr-ac-slope" placeholder="0.0" step="0.25" min="0" oninput="calcClr()"></div>
-              <div class="f"><label style="font-size:10px;">Hilly acres (×1.25)</label><input type="number" id="clr-ac-hill" placeholder="0.0" step="0.25" min="0" oninput="calcClr()"></div>
+              <div class="f"><label style="font-size:10px;">Flat acres (×1.0)</label><input type="number" id="clr-ac-flat" placeholder="0.0" step="0.25" min="0" oninput="calcClr()"><select id="clr-den-flat" onchange="calcClr()" style="display:none;margin-top:4px;width:100%;font-size:11px;background:#1a1a1a;color:#eee;border:1px solid #333;border-radius:4px;padding:3px;"><option value="1">L1 Sparse</option><option value="2">L2 Moderate</option><option value="3">L3 Heavy</option></select></div>
+              <div class="f"><label style="font-size:10px;">Sloped acres (×1.10)</label><input type="number" id="clr-ac-slope" placeholder="0.0" step="0.25" min="0" oninput="calcClr()"><select id="clr-den-slope" onchange="calcClr()" style="display:none;margin-top:4px;width:100%;font-size:11px;background:#1a1a1a;color:#eee;border:1px solid #333;border-radius:4px;padding:3px;"><option value="1">L1 Sparse</option><option value="2">L2 Moderate</option><option value="3">L3 Heavy</option></select></div>
+              <div class="f"><label style="font-size:10px;">Hilly acres (×1.25)</label><input type="number" id="clr-ac-hill" placeholder="0.0" step="0.25" min="0" oninput="calcClr()"><select id="clr-den-hill" onchange="calcClr()" style="display:none;margin-top:4px;width:100%;font-size:11px;background:#1a1a1a;color:#eee;border:1px solid #333;border-radius:4px;padding:3px;"><option value="1">L1 Sparse</option><option value="2">L2 Moderate</option><option value="3">L3 Heavy</option></select></div>
             </div>
             <div class="hint" id="clr-mixed-hint">Enter acres for each terrain type — they're priced separately and summed. Total auto-fills the acreage above.</div>
           </div>
@@ -1606,17 +1606,28 @@ const MUL_DAYHRS=8;
 function toggleMixedTerrain(){
   const on=$('clr-mixed')&&$('clr-mixed').checked;
   const f=$('clr-mixed-fields'); if(f)f.style.display=on?'block':'none';
-  // disable the single acreage + terrain buttons visually when mixed is on (they're ignored)
-  const ac=$('clr-ac'); if(ac)ac.disabled=on;
-  // mixed terrain and mixed density are mutually exclusive
-  if(on){ const md=$('clr-mixden'); if(md&&md.checked){md.checked=false;toggleMixedDensity();} }
+  syncMixModes();
 }
 function toggleMixedDensity(){
   const on=$('clr-mixden')&&$('clr-mixden').checked;
   const f=$('clr-mixden-fields'); if(f)f.style.display=on?'block':'none';
-  const ac=$('clr-ac'); if(ac)ac.disabled=on || ($('clr-mixed')&&$('clr-mixed').checked);
-  // mixed density and mixed terrain are mutually exclusive
-  if(on){ const mt=$('clr-mixed'); if(mt&&mt.checked){mt.checked=false;toggleMixedTerrain();} }
+  syncMixModes();
+}
+function syncMixModes(){
+  const mt=$('clr-mixed')&&$('clr-mixed').checked;
+  const md=$('clr-mixden')&&$('clr-mixden').checked;
+  const both=mt&&md;
+  // When BOTH are on, each terrain band carries its own density -> show per-band density pickers
+  ['flat','slope','hill'].forEach(b=>{ const s=$('clr-den-'+b); if(s)s.style.display=both?'block':'none'; });
+  // The standalone L1/L2/L3 acre inputs (density-only mode) only make sense when terrain is NOT split
+  const mdf=$('clr-mixden-fields'); if(mdf)mdf.style.display=(md&&!mt)?'block':'none';
+  // Single acreage field is ignored whenever any split is active
+  const ac=$('clr-ac'); if(ac)ac.disabled=mt||md;
+  // Hint text for the combined case
+  const mdh=$('clr-mixden-hint');
+  if(mdh)mdh.textContent = both
+    ? 'Both splits on: set density per terrain band above (flat/sloped/hilly each get their own density).'
+    : 'Enter acres for each density — each priced at its own rate and summed. Terrain multiplier applies across all.';
 }
 function calcClr(){
   if(!S.clrOn){S.clr=0;S.clrH=0;updAmt('clr',0,false,'');calcTot();return;}
@@ -1624,15 +1635,36 @@ function calcClr(){
   const perAcre=(CLR_PERACRE[att]||CLR_PERACRE.brush)[den];
   const mixed=$('clr-mixed')&&$('clr-mixed').checked;
   const mixden=$('clr-mixden')&&$('clr-mixden').checked;
+  const tbl=(CLR_PERACRE[att]||CLR_PERACRE.brush);
+  const TER={flat:1.0,slope:1.10,hill:1.25};
   let ac, sub, hrs, rate, effLabel;
 
-  if(mixden){
+  if(mixed && mixden){
+    // BOTH: each terrain band has its own acres AND its own density
+    const bands=[
+      {q:fv('clr-ac-flat'),  ter:TER.flat,  d:sv('clr-den-flat')||'1'},
+      {q:fv('clr-ac-slope'), ter:TER.slope, d:sv('clr-den-slope')||'1'},
+      {q:fv('clr-ac-hill'),  ter:TER.hill,  d:sv('clr-den-hill')||'1'}
+    ];
+    ac=bands.reduce((s,b)=>s+b.q,0);
+    sub=bands.reduce((s,b)=>s+b.q*tbl[b.d]*b.ter*rck,0);
+    if(att==='mulch'){
+      hrs=bands.reduce((s,b)=>s+(b.q/MUL_APD[b.d])*MUL_DAYHRS*b.ter*rck,0);
+      rate=MUL_RATE; S.clrTeeth=ac>0?hrs*MUL_TEETH:0;
+    } else {
+      hrs=bands.reduce((s,b)=>s+(b.q/CLR_APH[b.d])*b.ter*rck,0);
+      rate=CLR_RATE[att]; S.clrTeeth=0;
+    }
+    const acEl=$('clr-ac'); if(acEl){acEl.value=ac>0?ac:'';}
+    const mh=$('clr-mixed-hint'); if(mh)mh.textContent='Total '+ac.toFixed(2)+' ac · each band at its own density × terrain';
+    $('clr-mx').textContent='mixed';
+    $('clr-er').textContent=ac>0?'$'+Math.round(sub/ac)+'/ac avg':'—';
+  } else if(mixden){
     // Blended by DENSITY: each density band priced at its own rate, one terrain mx across all
     const a1=fv('clr-ac-l1'), a2=fv('clr-ac-l2'), a3=fv('clr-ac-l3');
     ac=a1+a2+a3;
     const ter=parseFloat(sv('clr-ter'));
     const mx=ter*rck;
-    const tbl=(CLR_PERACRE[att]||CLR_PERACRE.brush);
     const bandSub=(qty,d)=>qty*tbl[d]*mx;
     sub=bandSub(a1,'1')+bandSub(a2,'2')+bandSub(a3,'3');
     if(att==='mulch'){
@@ -1646,7 +1678,7 @@ function calcClr(){
     }
     const acEl=$('clr-ac'); if(acEl){acEl.value=ac>0?ac:'';}
     const mh=$('clr-mixden-hint'); if(mh)mh.textContent='Total '+ac.toFixed(2)+' ac · L1 '+a1+' / L2 '+a2+' / L3 '+a3+' — each at its own rate';
-    $('clr-mx').textContent=mx.toFixed(2)+'×';
+    $('clr-mx').textContent=(parseFloat(sv('clr-ter'))*rck).toFixed(2)+'×';
     $('clr-er').textContent=ac>0?'$'+Math.round(sub/ac)+'/ac avg':'—';
   } else if(mixed){
     // Blended: each terrain band priced separately, then summed
