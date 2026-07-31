@@ -1441,6 +1441,7 @@ GROUND DAMAGE: Operation of heavy tracked or wheeled equipment may cause damage 
   <div style="margin-top:14px">
     <button class="btn btn-r" onclick="window.print()">🖨 Print / Save PDF</button>
     <button class="btn btn-y" onclick="copyProposalData()">📋 Proposal Data (copy for Claude)</button>
+    <button class="btn" onclick="sendToTracker()" style="background:#1a1a1a;border:1px solid #5599cc;color:#5599cc;">📊 Send to Job Tracker</button>
     <button class="btn settings-btn no-print" onclick="openSettings()">⚙ Rates</button>
     <button class="btn btn-drive" onclick="saveToDrive()">💾 Save to Drive</button>
     <div class="drive-status" id="drive-status"></div>
@@ -2548,6 +2549,46 @@ function buildEmailBody() {
   const subj=`CHEW ${S.status} ${qnum} — ${addr}`;
   const htmlBody = buildHtmlEmail();
   return { to: em, subject: subj, body: htmlBody, cust, addr, qnum, depAmt };
+}
+function sendToTracker(){
+  const g=id=>document.getElementById(id);
+  const val=id=>(g(id)?g(id).value:'')||'';
+  const denMapT={'1':'L1','2':'L2','3':'L3'};
+  const terMapT={'1.0':'Flat','1.10':'Sloped','1.25':'Hilly'};
+  const attMapT={'mulch':'Mulcher','brush':'Mower','grapple':'Grapple','bucket':'Bucket'};
+  const rckMapT={'1.0':'Smooth','1.2':'Caliche','1.4':'Rock'};
+  let density=denMapT[val('clr-den')]||'';
+  let terrain=terMapT[val('clr-ter')]||'';
+  const clrMixed=g('clr-mixed')&&g('clr-mixed').checked;
+  const clrMixden=g('clr-mixden')&&g('clr-mixden').checked;
+  let noteExtra='';
+  if(clrMixden && !clrMixed){
+    const a=[['L1',parseFloat(val('clr-ac-l1'))||0],['L2',parseFloat(val('clr-ac-l2'))||0],['L3',parseFloat(val('clr-ac-l3'))||0]];
+    a.sort((x,y)=>y[1]-x[1]); density=a[0][0];
+    noteExtra='Mixed density: '+a.filter(x=>x[1]>0).map(x=>x[1]+'ac '+x[0]).join(' / ');
+  } else if(clrMixed && !clrMixden){
+    const b=[['Flat',parseFloat(val('clr-ac-flat'))||0],['Sloped',parseFloat(val('clr-ac-slope'))||0],['Hilly',parseFloat(val('clr-ac-hill'))||0]];
+    b.sort((x,y)=>y[1]-x[1]); terrain=b[0][0];
+    noteExtra='Mixed terrain: '+b.filter(x=>x[1]>0).map(x=>x[1]+'ac '+x[0]).join(' / ');
+  } else if(clrMixed && clrMixden){
+    noteExtra='Mixed density + terrain — see estimator quote for zone breakdown';
+  }
+  const rev=(g('r-tot')?.textContent||g('live-total')?.textContent||'').replace(/[^0-9.]/g,'');
+  const payload={
+    date:val('jd'), customer:val('cn'), zip:'',
+    dist:val('clr-dist')||val('mob-dist')||'',
+    type:S.clrOn?(val('clr-att')==='mulch'?'Forestry Mulching':'Brush Clearing'):'',
+    attach:attMapT[val('clr-att')]||'',
+    density:density, terrain:terrain, ground:rckMapT[val('clr-rck')]||'',
+    revenue:rev, quoteNum:val('qn')||val('qnum'),
+    hrsEst:'', notes:noteExtra, _stamp:Date.now()
+  };
+  try{
+    localStorage.setItem('chew_tracker_handoff', JSON.stringify(payload));
+    if(confirm('Quote details sent to the Job Tracker.\n\nOpen the tracker now to finish logging (you\'ll add ACTUAL hours + acres there)?')){
+      window.open('tracker/','_blank');
+    }
+  }catch(e){ alert('Could not send — storage error.'); }
 }
 function copyProposalData(){
   // Readable label maps
