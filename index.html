@@ -423,6 +423,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
           </div>
         </div>
         <button class="settings-save" onclick="saveSettings()">✓ SAVE ALL RATES &amp; CLOSE</button>
+        <button onclick="resetRatesToDefaults()" style="background:#2a1414;border:1px solid #cc2222;color:#ff6b6b;padding:6px 14px;cursor:pointer;border-radius:3px;font-size:12px;margin-left:8px;">↺ RESET TO DEFAULTS</button>
       </div>
     </div>
   </div>
@@ -2890,12 +2891,23 @@ const SETTINGS_DEFAULTS = {
   // Debris disposal customer rates per material
   debBrush:165, debYard:165, debHousehold:215, debCd:215,
   debStumps:180, debDirt:165, debWetsoil:165, debGravel:165, debConcrete:240,
-  // Run-rate calculator inputs (monthly costs + operating assumptions)
-  rrTrailer:1500, rrIns:830, rrSoft:250, rrOther:100, rrFuel:500, rrDump:0,
-  rrWage:35, rrMaint:400, rrDays:22, rrHrs:6, rrMargin:50, rrDebhrs:1.5,
+  // Run-rate calculator inputs (monthly costs + operating assumptions) — validated 2026-07-19
+  rrTrailer:801, rrIns:1424, rrSoft:184, rrOther:3200, rrDep:1872, rrFuel:2352, rrDump:0,
+  rrWage:40, rrMaint:2208, rrDays:16, rrHrs:6, rrMargin:35, rrDebhrs:1.5,
   pin:'1411'
 };
 let R = {...SETTINGS_DEFAULTS}; // live rates object
+function resetRatesToDefaults() {
+  if(!confirm('Reset ALL rates and run-rate costs to the built-in defaults?\n\nThis clears any saved changes on this device and restores the validated values (cost ~$165/hr).')) return;
+  localStorage.removeItem('chew_rates');
+  R = {...SETTINGS_DEFAULTS};
+  applyRatesToCalcs();
+  applyRunRateToInputs();
+  // repopulate the settings-panel input fields too, if the panel is built
+  try{ if(typeof populateSettingsForm==='function') populateSettingsForm(); }catch(e){}
+  try{ calcTot(); }catch(e){}
+  alert('Rates reset to defaults. Fully-burdened cost is now ~$165/hr.');
+}
 function loadSettings() {
   const saved = localStorage.getItem('chew_rates');
   if (saved) {
@@ -2909,7 +2921,7 @@ function applyRunRateToInputs() {
   // reads saved numbers even before the settings panel is opened.
   const m = {
     'rr-trailer':R.rrTrailer,'rr-ins':R.rrIns,'rr-soft':R.rrSoft,'rr-other':R.rrOther,
-    'rr-fuel':R.rrFuel,'rr-dump':R.rrDump,'rr-wage':R.rrWage,'rr-maint':R.rrMaint,
+    'rr-dep':R.rrDep,'rr-fuel':R.rrFuel,'rr-dump':R.rrDump,'rr-wage':R.rrWage,'rr-maint':R.rrMaint,
     'rr-days':R.rrDays,'rr-hrs':R.rrHrs,'rr-margin':R.rrMargin,'rr-debhrs':R.rrDebhrs
   };
   for (const [id,val] of Object.entries(m)) { const el=$(id); if(el) el.value=val; }
