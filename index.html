@@ -1493,7 +1493,9 @@ window.onload=()=>{
   $('jd').value=d.toISOString().split('T')[0];
   $('qn').value='CHEW-'+Date.now().toString().slice(-5);
   selMat('brush');
-  sp(); calcDem(); calcGrd(); calcTot();
+  sp(); calcDem(); calcGrd();
+  if(typeof calcRunRate==='function'){ try{calcRunRate();}catch(e){} } // set CHEW_COST_HR to real cost before first margin calc
+  calcTot();
   refreshQuoteList();
 };
 
