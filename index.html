@@ -394,7 +394,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
           <div style="font-size:10px;color:#F5C400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;margin-bottom:6px;">FIXED MONTHLY COSTS</div>
           <div class="settings-grid">
             <div class="sf"><label>Truck + trailer payments</label><input type="number" id="rr-trailer" value="801" oninput="calcRunRate()"><div class="hint">F-350 $480 + trailer $321</div></div>
-            <div class="sf"><label>Insurance (GL + auto + inland)</label><input type="number" id="rr-ins" value="1424" oninput="calcRunRate()"><div class="hint">Monthly premium</div></div>
+            <div class="sf"><label>Insurance (GL + auto + inland)</label><input type="number" id="rr-ins" value="673" oninput="calcRunRate()"><div class="hint">Monthly premium</div></div>
             <div class="sf"><label>Phone / internet / software</label><input type="number" id="rr-soft" value="184" oninput="calcRunRate()"><div class="hint">Jobber $150 + phone + web</div></div>
             <div class="sf"><label>Marketing + other fixed</label><input type="number" id="rr-other" value="3200" oninput="calcRunRate()"><div class="hint">Ads $3,000 + accounting</div></div>
             <div class="sf"><label>Equipment depreciation</label><input type="number" id="rr-dep" value="1872" oninput="calcRunRate()"><div class="hint">$117K ÷ 6,000 hrs = $19.50/hr</div></div>
@@ -409,7 +409,7 @@ body{background:var(--black);color:var(--text);font-family:'Barlow',sans-serif;f
           <div style="font-size:10px;color:#F5C400;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;margin:12px 0 6px;">OPERATING ASSUMPTIONS</div>
           <div class="settings-grid">
             <div class="sf"><label>Working days / month</label><input type="number" id="rr-days" value="16" oninput="calcRunRate()"><div class="hint">1,100 billable hrs/yr ÷ 6</div></div>
-            <div class="sf"><label>Billable hours / working day</label><input type="number" id="rr-hrs" value="6" oninput="calcRunRate()"><div class="hint">Machine-running hours only</div></div>
+            <div class="sf"><label>Billable hours / working day</label><input type="number" id="rr-hrs" value="4.5" oninput="calcRunRate()"><div class="hint">Machine-running hours only</div></div>
             <div class="sf"><label>Target gross margin (%)</label><input type="number" id="rr-margin" value="35" min="0" max="90" oninput="calcRunRate()"><div class="hint">25% floor · 35% good · 40% great</div></div>
             <div class="sf"><label>Typical debris-only job (hrs)</label><input type="number" id="rr-debhrs" value="1.5" step="0.25" oninput="calcRunRate()"><div class="hint">Door-to-door, small haul</div></div>
           </div>
@@ -2892,8 +2892,8 @@ const SETTINGS_DEFAULTS = {
   debBrush:165, debYard:165, debHousehold:215, debCd:215,
   debStumps:180, debDirt:165, debWetsoil:165, debGravel:165, debConcrete:240,
   // Run-rate calculator inputs (monthly costs + operating assumptions) — validated 2026-07-19
-  rrTrailer:801, rrIns:1424, rrSoft:184, rrOther:3200, rrDep:1872, rrFuel:2352, rrDump:0,
-  rrWage:40, rrMaint:2208, rrDays:16, rrHrs:6, rrMargin:35, rrDebhrs:1.5,
+  rrTrailer:801, rrIns:673, rrSoft:184, rrOther:3200, rrDep:1872, rrFuel:2352, rrDump:0,
+  rrWage:40, rrMaint:2208, rrDays:16, rrHrs:4.5, rrMargin:35, rrDebhrs:1.5,
   pin:'1411'
 };
 let R = {...SETTINGS_DEFAULTS}; // live rates object
